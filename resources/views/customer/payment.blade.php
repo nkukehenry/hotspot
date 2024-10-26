@@ -13,8 +13,8 @@
                 </div>
                 <div class="text-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $package->name }}</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($package->description, 60) }}</p>
-                    <p class="text-base font-semibold text-green-600 dark:text-white">UGX
+                    <p class="text-sm text-gray-500 dark:text-gray-400 dark:text-white">{{ Str::limit($package->description, 60) }}</p>
+                    <p class="text-base font-semibold text-green-600">UGX
                         {{ number_format($package->cost, 0, '.', ',') }}</p>
                 </div>
                 <div class="mb-4">
