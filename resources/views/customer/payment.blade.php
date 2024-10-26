@@ -6,14 +6,15 @@
         <div class="w-full max-w-md">
             <h1 class="text-2xl font-bold mb-4 text-center">Complete Payment</h1>
             <form action="{{ route('customer.processPayment', $package->id) }}" method="POST"
-                class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 dark:bg-gray-800">
                 @csrf
                 <div class="flex justify-center mb-4">
                     <img src="{{ asset('images/pay.png') }}" alt="Payment Icon" class="w-12 h-12">
                 </div>
                 <div class="text-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $package->name }}</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 dark:text-white">{{ Str::limit($package->description, 60) }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 dark:text-white">
+                        {{ Str::limit($package->description, 60) }}</p>
                     <p class="text-base font-semibold text-green-600">UGX
                         {{ number_format($package->cost, 0, '.', ',') }}</p>
                 </div>
