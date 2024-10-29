@@ -9,6 +9,8 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Services\SMSService;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Cache;
+
 class CustomerController extends Controller
 {
     public function showLocations()
@@ -31,9 +33,6 @@ class CustomerController extends Controller
 
     public function processPayment(Request $request, $packageId)
     {
-        // Here you would integrate with a payment service
-        // For now, we'll just simulate a successful payment
-
         // Validate the request
         $request->validate([
             'mobileNumber' => 'required|numeric',
@@ -43,11 +42,10 @@ class CustomerController extends Controller
         $transactionId = 'TXN' . rand(1000, 9999);
 
         // Simulate voucher creation
-        $voucher = Voucher::where('is_used',0)->first();
+        $voucher = Voucher::where('is_used', 0)->first();
         $package = Package::findOrFail($packageId);
 
-      //  dd($package);
-
+        // Set cookie for mobile number
         setcookie('mobile_number', $request->mobileNumber, time() + (86400 * 30), "/"); // 30 days
 
         // Record the transaction
@@ -59,6 +57,11 @@ class CustomerController extends Controller
             'package_id' => $package->id,
             'status' => 'completed',
         ]);
+
+        // Clear the relevant cache after the transaction is recorded
+        Cache::forget('reports_data_' . md5(json_encode(request()->all()))); // Clear specific cache for reports
+        Cache::forget('package_revenue_data'); // Clear package revenue cache
+        Cache::forget('location_revenue_data'); // Clear location revenue cache
 
         // Send SMS
         $smsService = new SMSService();

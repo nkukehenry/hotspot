@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -24,6 +25,7 @@ Route::post('/payment/{package}', [CustomerController::class, 'processPayment'])
 Route::get('/voucher/{transactionId}', [CustomerController::class, 'showVoucher'])->name('customer.voucher');
 Route::get('/transactions', [CustomerController::class, 'showTransactions'])->name('customer.transactions');
 
+
 Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/locations', [AdminController::class, 'showLocations'])->name('admin.locations');
@@ -43,6 +45,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::put('/locations/{location}', [AdminController::class, 'updateLocation'])->name('admin.updateLocation');
     Route::delete('/locations/{location}', [AdminController::class, 'deleteLocation'])->name('admin.deleteLocation');
     Route::get('/vouchers', [AdminController::class, 'showVouchers'])->name('admin.vouchers');
+    Route::get('/packages/{locationId}', [AdminController::class, 'getPackagesByLocation'])->name('admin.locationPackages');
+    Route::post('/admin/vouchers/bulk-action', [AdminController::class, 'bulkAction'])->name('admin.vouchers.bulkAction');
+    Route::post('/users', [UserController::class, 'store'])->name('admin.addUser');
 });
 
 require __DIR__ . '/auth.php';

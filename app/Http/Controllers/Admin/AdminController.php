@@ -12,6 +12,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use App\Models\Location;
+use App\Models\Voucher;
+use Illuminate\Support\Facades\Cache;
 
 class AdminController extends Controller
 {
@@ -37,22 +39,84 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User deleted successfully.');
     }
 
-    public function showReports()
+    public function showReports(Request $request)
     {
-        $salesData = DB::table('transactions')
-            ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
-            ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-            ->join('locations', 'packages.location_id', '=', 'locations.id')
-            ->select(
-                'packages.name as package_name',
-                'locations.name as location_name',
-                DB::raw('count(transactions.id) as sales_count'),
-                DB::raw('sum(packages.cost) as revenue')
-            )
-            ->groupBy('packages.id', 'locations.id')
-            ->get();
+        // Define a unique cache key based on the request parameters
+        $cacheKey = 'reports_data_' . md5(json_encode($request->all()));
 
-        return view('admin.reports', compact('salesData'));
+        // Attempt to retrieve the cached data
+        $salesData = Cache::remember($cacheKey, 60 * 60, function () use ($request) {
+            // Initialize the query for sales data
+            $query = DB::table('transactions')
+                ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
+                ->join('packages', 'vouchers.package_id', '=', 'packages.id')
+                ->join('locations', 'packages.location_id', '=', 'locations.id')
+                ->select(
+                    'packages.name as package_name',
+                    'packages.cost',
+                    'locations.name as location_name',
+                    DB::raw('count(transactions.id) as sales_count'),
+                    DB::raw('sum(packages.cost) as revenue')
+                );
+
+            // Apply filters if provided
+            if ($request->filled('package_id')) {
+                $query->where('packages.id', $request->package_id);
+            }
+
+            if ($request->filled('location_id')) {
+                $query->where('locations.id', $request->location_id);
+            }
+
+            // Group the results
+            return $query->groupBy('packages.id', 'packages.name', 'packages.cost', 'locations.id', 'locations.name')->get();
+        });
+
+        // Prepare data for pie charts with the same filters applied
+        $packageRevenueData = Cache::remember('package_revenue_data_' . $cacheKey, 60 * 60, function () use ($request) {
+            $query = DB::table('transactions')
+                ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
+                ->join('packages', 'vouchers.package_id', '=', 'packages.id')
+                ->join('locations', 'packages.location_id', '=', 'locations.id')
+                ->select('packages.name as package_name', DB::raw('sum(packages.cost) as total_revenue'));
+
+            // Apply filters if provided
+            if ($request->filled('package_id')) {
+                $query->where('packages.id', $request->package_id);
+            }
+
+            if ($request->filled('location_id')) {
+                $query->where('locations.id', $request->location_id);
+            }
+
+            return $query->groupBy('packages.id', 'packages.name')->get();
+        });
+
+        $locationRevenueData = Cache::remember('location_revenue_data_' . $cacheKey, 60 * 60, function () use ($request) {
+            $query = DB::table('transactions')
+                ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
+                ->join('packages', 'vouchers.package_id', '=', 'packages.id')
+                ->join('locations', 'packages.location_id', '=', 'locations.id')
+                ->select('locations.name as location_name', DB::raw('sum(packages.cost) as total_revenue'));
+
+            // Apply filters if provided
+            if ($request->filled('package_id')) {
+                $query->where('packages.id', $request->package_id);
+            }
+
+            if ($request->filled('location_id')) {
+                $query->where('locations.id', $request->location_id);
+            }
+
+            return $query->groupBy('locations.id', 'locations.name')->get();
+        });
+
+        // Fetch all packages and locations for the filter dropdowns
+        $packages = Package::all();
+        $locations = Location::all();
+
+        // Return the view with the data
+        return view('admin.reports', compact('salesData', 'packages', 'locations', 'packageRevenueData', 'locationRevenueData'));
     }
 
     public function showSettings()
@@ -189,4 +253,29 @@ class AdminController extends Controller
 
         return view('admin.vouchers', compact('vouchers', 'locations', 'packages'));
     }
+
+public function getPackagesByLocation($locationId)
+{
+    $packages = Package::where('location_id', $locationId)->get();
+    return response()->json($packages);
+}
+
+public function bulkAction(Request $request)
+{
+    $voucherIds = $request->input('voucher_ids', []);
+    $status = $request->input('status');
+
+    if ($request->isMethod('post') && !empty($voucherIds)) {
+        if ($status) {
+            // Change status
+            Voucher::whereIn('id', $voucherIds)->update(['is_used' => $status === 'used']);
+        } else {
+            // Delete vouchers
+            Voucher::destroy($voucherIds);
+        }
+    }
+
+    return redirect()->route('admin.vouchers')->with('success', 'Action completed successfully.');
+}
+
 }
