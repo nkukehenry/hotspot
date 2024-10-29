@@ -149,7 +149,7 @@ class AdminController extends Controller
 
         Excel::import(new VouchersImport($packageId), $request->file('file'));
 
-        return redirect()->route('admin.showUploadVouchers')->with('success', 'Vouchers uploaded successfully.');
+        return redirect()->route('admin.vouchers')->with('success', 'Vouchers uploaded successfully.');
     }
 
     public function showLocations()
