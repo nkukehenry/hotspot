@@ -19,7 +19,8 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/', [CustomerController::class, 'showLocations'])->name('customer.index');
 Route::get('/locations', [CustomerController::class, 'showLocations'])->name('customer.locations');
-Route::get('/packages/{location}', [CustomerController::class, 'showPackages'])->name('customer.packages');
+Route::get('/wifi/{location}', [CustomerController::class, 'showPackages'])->name('customer.packages');
+//Route::get('/packages/{location}', [CustomerController::class, 'showPackages'])->name('customer.packages');
 Route::get('/payment/{package}', [CustomerController::class, 'showPayment'])->name('customer.payment');
 Route::post('/payment/{package}', [CustomerController::class, 'processPayment'])->name('customer.processPayment');
 Route::get('/voucher/{transactionId}', [CustomerController::class, 'showVoucher'])->name('customer.voucher');
