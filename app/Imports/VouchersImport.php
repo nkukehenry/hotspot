@@ -24,12 +24,12 @@ class VouchersImport implements ToModel, WithHeadingRow
     {
        
         // Check if the voucher code already exists
-        $existingVoucher = Voucher::where('code', $row['code'])->first();
+        $existingVoucher = Voucher::where('code', $row['username'])->first();
 
         // If the voucher does not exist, create a new one
         if (!$existingVoucher) {
             return new Voucher([
-                'code' => $row['code'], // Ensure this matches the header in your Excel file
+                'code' => $row['username'], // Ensure this matches the header in your Excel file
                 'package_id' => $this->packageId,
                 'is_used' => false,
             ]);
