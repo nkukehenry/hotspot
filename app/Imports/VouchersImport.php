@@ -23,7 +23,7 @@ class VouchersImport implements ToModel, WithHeadingRow
     public function model(array $row)
     {
         return new Voucher([
-            'code' => $row['code'],
+            'code' => $row['Username'],
             'package_id' => $this->packageId,
             'is_used' => false,
         ]);

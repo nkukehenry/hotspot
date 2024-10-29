@@ -142,7 +142,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'package_id' => 'required|exists:packages,id',
-            'file' => 'required|mimes:xlsx,xls',
+            'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         $packageId = $request->package_id;
