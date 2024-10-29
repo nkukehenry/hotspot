@@ -34,7 +34,8 @@
                                 </button>
                                 <a href="https://api.qrserver.com/v1/create-qr-code/?data={{ urlencode(route('customer.packages', $location->id)) }}&size=300x300"
                                     download="qrcode-{{ $location->id }}.png"
-                                    class="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded">
+                                    class="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+                                    target="_blank">
                                     Download QR Code
                                 </a>
                             </td>
