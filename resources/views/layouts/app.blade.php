@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </head>
 
-<body class="bg-gray-200 dark:bg-gray-900">
+<body class="bg-gray-200 dark:bg-gray-900" style="background-image:url({{asset('images/bg.webp')}})!important; background-size:cover!important; background-repeat:no-repeat; min-height:100vh; background-position:center;">
     <nav class="bg-white border-gray-200 dark:bg-gray-900">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
             <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
