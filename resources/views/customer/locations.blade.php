@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container mx-auto mt-8 flex justify-center">
+    <div class=" flex items-center justify-center min-h-screen mx-auto  flex justify-center">
         <div
             class="w-full max-w-lg p-6 bg-black bg-opacity-80 border border-gray-200 rounded-lg shadow sm:p-10 dark:bg-gray-900 dark:border-gray-700">
             <div class="flex items-center justify-between mb-6">
