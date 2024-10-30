@@ -6,13 +6,22 @@ use App\Models\Location;
 use App\Models\Package;
 use App\Models\Voucher;
 use App\Models\Transaction;
+use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use App\Services\SMSService;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class CustomerController extends Controller
 {
+
+    private PaymentService $paymentService;
+
+    function __construct(PaymentService $paymentService){
+        $this->paymentService = $paymentService;
+    }
+
     public function showLocations()
     {
         $locations = Location::all();
@@ -55,8 +64,12 @@ class CustomerController extends Controller
             'mobile_number' => $request->mobileNumber,
             'amount' => $package->cost,
             'package_id' => $package->id,
-            'status' => 'completed',
-        ]);
+             'status' => 'completed',
+       ]);
+
+        $response = $this->paymentService->pay($package->cost,$request->mobileNumber,$transactionId);
+
+        Log::info("Payment Response: "+json_encode($response));
 
         // Clear the relevant cache after the transaction is recorded
         Cache::forget('reports_data_' . md5(json_encode(request()->all()))); // Clear specific cache for reports
