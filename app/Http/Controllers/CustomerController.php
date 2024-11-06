@@ -107,4 +107,10 @@ class CustomerController extends Controller
 
          return view('customer.transactions', compact('transactions'));
      }
+
+     public function handleCallback(Request $request)
+     {
+         Log::info("Response".json_encode($request->all()));
+         Cache::remember("Response",$request->all());
+     }
 }

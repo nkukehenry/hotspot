@@ -25,7 +25,7 @@ Route::get('/payment/{package}', [CustomerController::class, 'showPayment'])->na
 Route::post('/payment/{package}', [CustomerController::class, 'processPayment'])->name('customer.processPayment');
 Route::get('/voucher/{transactionId}', [CustomerController::class, 'showVoucher'])->name('customer.voucher');
 Route::get('/transactions', [CustomerController::class, 'showTransactions'])->name('customer.transactions');
-
+Route::post('/jpesa/callback',[CustomerController::class, 'handleCallback']);
 
 Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
