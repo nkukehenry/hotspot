@@ -69,7 +69,7 @@ class CustomerController extends Controller
 
         $response = $this->paymentService->pay($package->cost,$request->mobileNumber,$transactionId);
 
-        Log::info("Payment Response: "+json_encode($response));
+        Log::info("Payment Response: ".json_encode($response));
 
         // Clear the relevant cache after the transaction is recorded
         Cache::forget('reports_data_' . md5(json_encode(request()->all()))); // Clear specific cache for reports

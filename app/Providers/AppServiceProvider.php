@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Services\JpesaPayment;
+use App\Services\PaymentService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -11,7 +13,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Bind the PaymentService interface to the JpesaPayment implementation
+        $this->app->singleton(PaymentService::class, function ($app) {
+            return new JpesaPayment();
+        });
     }
 
     /**
