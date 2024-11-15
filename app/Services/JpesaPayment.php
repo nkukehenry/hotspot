@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
+
 class JpesaPayment implements PaymentService{
 
     public function pay($amount,$phone_number,$reference){
@@ -21,6 +23,9 @@ class JpesaPayment implements PaymentService{
                     <tx>' . $reference . '</tx>
                     <description>' . $reference . ' Internet Subscription</description>
                 </g7bill>';
+
+
+        Log::info("Payment Request: ".$DATA);
 
         // Initialize cURL
         $ch = curl_init();
@@ -74,6 +79,8 @@ class JpesaPayment implements PaymentService{
                        <action>info</action>
                        <tid>'.$tranId.'</tid>
                      </g7bill>';
+
+        Log::info( "Status Request: ".$DATA);
      
         // Initialize cURL
         $ch = curl_init();

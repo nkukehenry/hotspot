@@ -142,7 +142,7 @@ class CustomerController extends Controller
 
         }else{
 
-            $message = ($is_success==0)?'Payment still pending, please approve to receive a voucher':'Payment Initiattion Failed. Try again.';
+            $message = ($is_success==0)?'Payment still pending, please approve to receive a voucher':'Payment Failed. Try again.';
 
             $message_type = ($is_success==0)?'success':'error';
 
