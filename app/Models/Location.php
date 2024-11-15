@@ -22,6 +22,7 @@ class Location extends Model
         static::creating(function ($location) {
             // Generate a unique location code
             $location->location_code = self::generateUniqueLocationCode();
+            $location->code =  $location->location_code;
         });
     }
 

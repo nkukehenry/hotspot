@@ -5,7 +5,7 @@
     <div class="container mx-auto mt-8 flex justify-center">
         <div class="w-full max-w-md">
             <h1 class="text-2xl font-bold mb-4 text-center">Complete Payment</h1>
-            <form action="{{ route('customer.processPayment', $package->id) }}" method="POST"
+            <form action="{{ route('customer.processPayment', $package->code) }}" method="POST"
                 class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 dark:bg-gray-800">
                 @csrf
                 <div class="flex justify-center mb-4">
@@ -15,7 +15,7 @@
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $package->name }}</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400 dark:text-white">
                         {{ Str::limit($package->description, 60) }}</p>
-                    <p class="text-base font-semibold text-green-600">UGX
+                    <p class="text-base font-bold text-lg text-green-600">UGX
                         {{ number_format($package->cost, 0, '.', ',') }}</p>
                 </div>
                 <div class="mb-4">
@@ -33,9 +33,15 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             pattern="0[0-9]{9}" placeholder="0777000000" required>
                     </div>
-                    <p id="helper-text-explanation" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Enter a valid
+                    <p id="helper-text-explanation" class="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center">Enter
+                        a valid
                         mobile money number and make sure you approve the payment on your phone.
                     </p>
+
+                    <div class="flex justify-center w-full pt-2">
+                        <img class="img-responsive center-block rounded text-center" src="{{ asset('images/momo.png') }}"
+                            width="130px" alt="Mobile Money">
+                    </div>
                 </div>
                 <button type="submit"
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">

@@ -28,7 +28,7 @@
                                     class="inline-block items-center text-base font-semibold text-green-600 dark:text-white">
                                     UGX {{ number_format($package->cost, 0, '.', ',') }}
                                 </div>
-                                <a href="{{ route('customer.payment', $package->id) }}"
+                                <a href="{{ route('customer.payment', $package->code) }}"
                                     class="ml-4 inline-block text-blue-600 border border-blue-600 rounded px-3 py-1 hover:bg-blue-600 hover:text-white dark:text-blue-500 dark:border-blue-500 dark:hover:bg-blue-500 dark:hover:text-white">
                                     Buy Now
                                 </a>

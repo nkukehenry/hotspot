@@ -28,19 +28,20 @@ class CustomerController extends Controller
         return view('customer.locations', compact('locations'));
     }
 
-    public function showPackages($locationId)
+    public function showPackages($locationCode)
     {
-        $packages = Package::where('location_id', $locationId)->get();
+        $location = Location::where('code',$locationCode)->first();
+        $packages = Package::where( 'location_id', $location->id)->get();
         return view('customer.packages', compact('packages'));
     }
 
-    public function showPayment($packageId)
+    public function showPayment($packageCode)
     {
-        $package = Package::findOrFail($packageId);
+        $package = Package::where('code',$packageCode)->first();
         return view('customer.payment', compact('package'));
     }
 
-    public function processPayment(Request $request, $packageId)
+    public function processPayment(Request $request, $packageCode)
     {
         // Validate the request
         $request->validate([
@@ -51,8 +52,8 @@ class CustomerController extends Controller
         $transactionId = 'TXN' . rand(1000, 9999);
 
         // Simulate voucher creation
-        $voucher = Voucher::where('is_used', 0)->first();
-        $package = Package::findOrFail($packageId);
+        $voucher = Voucher::where( 'is_used', 0)->first();
+        $package = Package::where('code', $packageCode)->first();
 
         // Set cookie for mobile number
         setcookie('mobile_number', $request->mobileNumber, time() + (86400 * 30), "/"); // 30 days
@@ -81,14 +82,14 @@ class CustomerController extends Controller
         $smsService->sendVoucher($request->mobileNumber, $voucher->code);
 
         // Redirect to voucher display
-        return redirect()->route('customer.voucher', $voucher->id);
+        return redirect()->route('customer.voucher', $voucher->code);
     }
 
-    public function showVoucher($voucherId)
+    public function showVoucher($voucherCode)
     {
         // Retrieve the voucher associated with the transaction
         // For simplicity, we'll assume a direct relationship
-        $voucher = Voucher::where('id', $voucherId)->firstOrFail();
+        $voucher = Voucher::where('code', $voucherCode)->firstOrFail();
 
         return view('customer.voucher', compact('voucher'));
     }

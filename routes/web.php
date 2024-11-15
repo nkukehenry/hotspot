@@ -18,6 +18,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/', [CustomerController::class, 'showLocations'])->name('customer.index');
+Route::get('/contact', [CustomerController::class, 'showLocations'])->name('customer.index');
 Route::get('/locations', [CustomerController::class, 'showLocations'])->name('customer.locations');
 Route::get('/wifi/{location}', [CustomerController::class, 'showPackages'])->name('customer.packages');
 //Route::get('/packages/{location}', [CustomerController::class, 'showPackages'])->name('customer.packages');

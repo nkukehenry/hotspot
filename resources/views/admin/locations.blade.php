@@ -26,14 +26,14 @@
                         <tr class="text-gray-700 dark:text-gray-300">
                             <td class="py-2">{{ $location->name }}</td>
                             <td class="py-2">
-                                <a href="{{ route('customer.packages', $location->id) }}" target="_blank"
+                                <a href="{{ route('customer.packages', $location->code) }}" target="_blank"
                                     class="text-blue-500 hover:underline">View Packages</a>
-                                <button onclick="copyToClipboard('{{ route('customer.packages', $location->id) }}')"
+                                <button onclick="copyToClipboard('{{ route('customer.packages', $location->code) }}')"
                                     class="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-2 rounded dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
                                     Copy Link
                                 </button>
-                                <a href="https://api.qrserver.com/v1/create-qr-code/?data={{ urlencode(route('customer.packages', $location->id)) }}&size=300x300"
-                                    download="qrcode-{{ $location->id }}.png"
+                                <a href="https://api.qrserver.com/v1/create-qr-code/?data={{ urlencode(route('customer.packages', $location->code)) }}&size=300x300"
+                                    download="qrcode-{{ $location->code }}.png"
                                     class="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
                                     target="_blank">
                                     Download QR Code
