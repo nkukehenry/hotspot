@@ -90,6 +90,8 @@ class CustomerController extends Controller
 
                 $response = (Object) $this->paymentService->checkStatus($transactionId);
 
+                Log::info("Payment Status Response: ".$i.": ". json_encode($response));
+
                 if($response->data && $response->data->api_status){
 
                     if($response->data->api_status=="success"){
