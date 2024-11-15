@@ -136,7 +136,7 @@ class CustomerController extends Controller
 
      public function handleCallback(Request $request)
      {
-         Log::info("Response".json_encode($request->all()));
+         Log::info("Callback Response".json_encode($request->all()));
          Cache::remember("Response",$request->all());
      }
 }
