@@ -128,7 +128,7 @@ class CustomerController extends Controller
         $finalVoucher = $this->getVoucher($voucher);
 
         if(!$finalVoucher)
-            return redirect()->route('customer.packages', $voucher->package->location->code)
+            return redirect()->route('customer.packages', $voucher->package->code)
             ->with('error', 'No available vouchers for this package. Contact Admin');
         
          $transaction->voucher_id=$finalVoucher->id;
@@ -146,7 +146,7 @@ class CustomerController extends Controller
 
             $message_type = ($is_success==0)?'success':'error';
 
-            return redirect()->route('customer.payment', $voucher->package->location->code)
+            return redirect()->route('customer.payment', $voucher->package->code)
             ->with($message_type,$message );
         }
     }
