@@ -3,6 +3,11 @@
 
 @section('content')
     <div class="container mx-auto mt-8 flex justify-center">
+        @if (session('error'))
+            <div class="mb-4 text-red-600">
+                {{ session('error') }}
+            </div>
+        @endif
         <div
             class="w-full max-w-md p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between mb-4">

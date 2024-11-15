@@ -51,9 +51,17 @@ class CustomerController extends Controller
         // Simulate payment processing
         $transactionId = 'TXN' . rand(1000, 9999);
 
-        // Simulate voucher creation
-        $voucher = Voucher::where( 'is_used', 0)->first();
+        // Retrieve the package
         $package = Package::where('code', $packageCode)->first();
+
+        // Check for available voucher
+        $voucher = Voucher::where('is_used', 0)->first();
+
+        // If no voucher is available, redirect with an error message
+        if (!$voucher) {
+            return redirect()->route('customer.packages', $package->location->code)
+                ->with('error', 'Voucher system temporarily unavailable.');
+        }
 
         // Set cookie for mobile number
         setcookie('mobile_number', $request->mobileNumber, time() + (86400 * 30), "/"); // 30 days
@@ -65,12 +73,12 @@ class CustomerController extends Controller
             'mobile_number' => $request->mobileNumber,
             'amount' => $package->cost,
             'package_id' => $package->id,
-             'status' => 'completed',
-       ]);
+            'status' => 'completed',
+        ]);
 
-        $response = $this->paymentService->pay($package->cost,$request->mobileNumber,$transactionId);
+        $response = $this->paymentService->pay($package->cost, $request->mobileNumber, $transactionId);
 
-        Log::info("Payment Response: ".json_encode($response));
+        Log::info("Payment Response: " . json_encode($response));
 
         // Clear the relevant cache after the transaction is recorded
         Cache::forget('reports_data_' . md5(json_encode(request()->all()))); // Clear specific cache for reports
@@ -88,8 +96,25 @@ class CustomerController extends Controller
     public function showVoucher($voucherCode)
     {
         // Retrieve the voucher associated with the transaction
-        // For simplicity, we'll assume a direct relationship
         $voucher = Voucher::where('code', $voucherCode)->firstOrFail();
+
+        // Check if the voucher is already used
+        if ($voucher->is_used) {
+            // Find another voucher that is not used and has the same package
+            $newVoucher = Voucher::where('package_id', $voucher->package_id)
+                ->where('is_used', 0)
+                ->first();
+
+            // If a new voucher is found, mark it as used
+            if ($newVoucher) {
+                $this->markVoucherAsUsed($newVoucher); // Assuming markAsUsed() updates the is_used field
+                $voucher = $newVoucher; // Use the new voucher for display
+            } else {
+                // If no available voucher is found, you can handle this case as needed
+                return redirect()->route('customer.packages', $voucher->package->location->code)
+                    ->with('error', 'No available vouchers for this package. Contact Admin');
+            }
+        }
 
         return view('customer.voucher', compact('voucher'));
     }
