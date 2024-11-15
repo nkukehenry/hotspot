@@ -5,11 +5,31 @@
     <div class="container mx-auto mt-8">
         <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Manage Packages</h1>
 
+
+
         <!-- Add Package Button -->
         <button data-modal-target="add-package-modal" data-modal-toggle="add-package-modal"
             class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
             Add Package
         </button>
+
+        <!-- Filter by Location -->
+        <form method="GET" action="{{ route('admin.packages') }}" class="mb-4">
+            <label for="location_id" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Filter by
+                Location</label>
+            <select id="location_id" name="location_id"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
+                <option value="">All Locations</option>
+                @foreach ($locations as $location)
+                    <option value="{{ $location->id }}" {{ request('location_id') == $location->id ? 'selected' : '' }}>
+                        {{ $location->name }}
+                    </option>
+                @endforeach
+            </select>
+            <button type="submit" class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Filter
+            </button>
+        </form>
 
         <table class="min-w-full bg-white dark:bg-gray-800">
             <thead>
@@ -124,8 +144,9 @@
                                     <span class="sr-only">Close modal</span>
                                 </button>
                                 <div class="p-4 md:p-5 text-center">
-                                    <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true"
-                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                    <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200"
+                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 20 20">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                             stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
@@ -151,7 +172,8 @@
             </tbody>
         </table>
 
-
+        <!-- Pagination Links -->
+        {{ $packages->links() }}
 
         <!-- Add Package Modal -->
         <div id="add-package-modal" tabindex="-1" aria-hidden="true"

@@ -19,7 +19,21 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        return view('admin.dashboard');
+        // Fetch sales data for the dashboard
+        $salesData = DB::table('transactions')
+            ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
+            ->join('packages', 'vouchers.package_id', '=', 'packages.id')
+            ->join('locations', 'packages.location_id', '=', 'locations.id')
+            ->select(
+                'packages.name as package_name',
+                'locations.name as location_name',
+                DB::raw('count(transactions.id) as sales_count'),
+                DB::raw('sum(packages.cost) as revenue')
+            )
+            ->groupBy('packages.id', 'packages.name', 'locations.id', 'locations.name')
+            ->get();
+
+        return view('admin.dashboard', compact('salesData'));
     }
 
     public function showUsers()
@@ -216,10 +230,16 @@ class AdminController extends Controller
     }
 
 
-    public function showPackages()
+    public function showPackages(Request $request)
     {
-        $packages = Package::paginate(10);
         $locations = Location::all();
+        $locationId = $request->input('location_id');
+
+        // Query packages, applying the location filter if provided
+        $packages = Package::when($locationId, function ($query, $locationId) {
+            return $query->where('location_id', $locationId);
+        })->paginate(10);
+
         return view('admin.packages', compact('packages', 'locations'));
     }
 
