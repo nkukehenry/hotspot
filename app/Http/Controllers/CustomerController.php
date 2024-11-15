@@ -76,30 +76,91 @@ class CustomerController extends Controller
             'status' => 'completed',
         ]);
 
-        $response = $this->paymentService->pay($package->cost, $request->mobileNumber, $transactionId);
+        $response = (Object) $this->paymentService->pay($package->cost, $request->mobileNumber, $transactionId);
 
         Log::info("Payment Response: " . json_encode($response));
+
+        $is_success= 0; //o is pending, 1 is  successful, 2 is failed
+
+        if($response->data && $response->data->api_status =='success' ){
+
+            $i=0;
+
+            while($i<10){
+
+                $response = (Object) $this->paymentService->checkStatus($transactionId);
+
+                if($response->data && $response->data->api_status){
+
+                    if($response->data->api_status=="success"){
+                     $is_success= 1;
+                    }
+                    else if($response->data->api_status=="error"){
+                     $is_success= 2;
+                    }
+                    else{
+                        $is_success = 0;
+                    }
+
+                    break;
+                }
+
+                $i++;
+
+                sleep(3);
+            }
+
+        }else{
+
+            return redirect()->route('customer.payment', $voucher->package->code)
+                    ->with('error', 'Payment Initiattion Failed. Try again.');
+        }
 
         // Clear the relevant cache after the transaction is recorded
         Cache::forget('reports_data_' . md5(json_encode(request()->all()))); // Clear specific cache for reports
         Cache::forget('package_revenue_data'); // Clear package revenue cache
         Cache::forget('location_revenue_data'); // Clear location revenue cache
 
-        // Send SMS
+        if($is_success== 1){
+
+        $finalVoucher = $this->getVoucher($voucher);
+
+        if(!$finalVoucher)
+            return redirect()->route('customer.packages', $voucher->package->location->code)
+            ->with('error', 'No available vouchers for this package. Contact Admin');
+        
+         $transaction->voucher_id=$finalVoucher->id;
+         $transaction->update();
+            // Send SMS
         $smsService = new SMSService();
-        $smsService->sendVoucher($request->mobileNumber, $voucher->code);
+        $smsService->sendVoucher($request->mobileNumber, $finalVoucher->code);
 
         // Redirect to voucher display
-        return redirect()->route('customer.voucher', $voucher->code);
+        return redirect()->route('customer.voucher', $voucher->package->code);
+
+        }else{
+
+            $message = ($is_success==0)?'Payment still pending, please approve to receive a voucher':'Payment Initiattion Failed. Try again.';
+
+            $message_type = ($is_success==0)?'success':'error';
+
+            return redirect()->route('customer.payment', $voucher->package->location->code)
+            ->with($message_type,$message );
+        }
     }
 
     public function showVoucher($voucherCode)
     {
         // Retrieve the voucher associated with the transaction
         $voucher = Voucher::where('code', $voucherCode)->firstOrFail();
+        return view('customer.voucher', compact('voucher'));
+    }
 
-        // Check if the voucher is already used
-        if ($voucher->is_used) {
+    public function getVoucher($voucher){
+
+          $voucher = Voucher::find($voucher->id);
+           // Check if the voucher is already used
+           if ($voucher->is_used) {
             // Find another voucher that is not used and has the same package
             $newVoucher = Voucher::where('package_id', $voucher->package_id)
                 ->where('is_used', 0)
@@ -108,15 +169,14 @@ class CustomerController extends Controller
             // If a new voucher is found, mark it as used
             if ($newVoucher) {
                 $this->markVoucherAsUsed($newVoucher); // Assuming markAsUsed() updates the is_used field
-                $voucher = $newVoucher; // Use the new voucher for display
+                return $newVoucher; // Use the new voucher for display
             } else {
                 // If no available voucher is found, you can handle this case as needed
-                return redirect()->route('customer.packages', $voucher->package->location->code)
-                    ->with('error', 'No available vouchers for this package. Contact Admin');
+                return false;
             }
         }
 
-        return view('customer.voucher', compact('voucher'));
+        return $voucher;
     }
 
     // Example usage
@@ -138,5 +198,34 @@ class CustomerController extends Controller
      {
          Log::info("Callback Response".json_encode($request->all()));
          Cache::remember("Response",$request->all());
-     }
+
+         $response = (Object) $request->all();
+
+         if($response->data && $response->data->api_status =='success' ){
+
+            $i=0;
+
+            $transactionId = $response->data->tid;
+
+            $transaction = Transaction::where('transaction_id',$transactionId)->first();
+            $mobileNumber= $transaction->mobile_number;
+            $voucher = Voucher::find($transaction->voucher_id);
+            $finalVoucher = $this->getVoucher($voucher);
+
+            if($finalVoucher){
+                
+                $transaction->voucher_id=$finalVoucher->id;
+                $transaction->update();
+            
+             // Send SMS
+                $smsService = new SMSService();
+                $smsService->sendVoucher($mobileNumber,  $finalVoucher->code);
+
+            }
+
+        }
+
+        
+
+    }
 }
