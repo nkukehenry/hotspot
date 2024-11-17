@@ -84,6 +84,8 @@ class CustomerController extends Controller
 
         if($response->data && $response->data->api_status =='success' ){
 
+            $transaction->transaction_id = $response->data->tid;
+
             $i=0;
 
             while($i<10){
@@ -202,7 +204,7 @@ class CustomerController extends Controller
         
          $response = (Object) $request->all();
 
-         if($response && ($response->api_status =='success' || $response->api_status =='closed') ){
+         if($response && ($response->status =='success' || $response->status =='closed') ){
 
             $i=0;
 
