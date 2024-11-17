@@ -202,11 +202,11 @@ class CustomerController extends Controller
         
          $response = (Object) $request->all();
 
-         if($response->data && $response->data->api_status =='success' ){
+         if($response && ($response->api_status =='success' || $response->api_status =='closed') ){
 
             $i=0;
 
-            $transactionId = $response->data->tid;
+            $transactionId = $response->tid;
 
             Cache::remember("callback_".$transactionId, 60 * 60, function() use ($request) {
                     return $request->all();
