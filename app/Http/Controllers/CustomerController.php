@@ -85,6 +85,9 @@ class CustomerController extends Controller
         if($response->data && $response->data->api_status =='success' ){
 
             $transaction->transaction_id = $response->data->tid;
+            $transaction->update();
+
+            $transactionId =  $transaction->transaction_id;
 
             $i=0;
 
@@ -206,34 +209,37 @@ class CustomerController extends Controller
 
          if($response && ($response->status =='success' || $response->status =='closed') ){
 
-            $i=0;
-
             $transactionId = $response->tid;
 
             Cache::remember("callback_".$transactionId, 60 * 60, function() use ($request) {
                     return $request->all();
             });
 
-
-            $transaction = Transaction::where('transaction_id',$transactionId)->first();
-            $mobileNumber= $transaction->mobile_number;
-            $voucher = Voucher::find($transaction->voucher_id);
-            $finalVoucher = $this->getVoucher($voucher);
-
-            if($finalVoucher){
-                
-                $transaction->voucher_id=$finalVoucher->id;
-                $transaction->update();
-            
-             // Send SMS
-                $smsService = new SMSService();
-                $smsService->sendVoucher($mobileNumber,  $finalVoucher->code);
-
-            }
+            Log::info(Cache::get("callback_".$transactionId));
 
         }
 
         return 'success';
 
+    }
+
+    private function activateAccount($transactionId){
+
+
+        $transaction = Transaction::where('transaction_id',$transactionId)->first();
+        $mobileNumber= $transaction->mobile;
+        $voucher = Voucher::find($transaction->voucher_id);
+        $finalVoucher = $this->getVoucher($voucher);
+
+        if($finalVoucher){
+            
+            $transaction->voucher_id=$finalVoucher->id;
+            $transaction->update();
+        
+         // Send SMS
+            $smsService = new SMSService();
+            $smsService->sendVoucher($mobileNumber,  $finalVoucher->code);
+
+        }
     }
 }
