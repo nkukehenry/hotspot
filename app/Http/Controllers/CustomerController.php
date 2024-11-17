@@ -231,7 +231,7 @@ class CustomerController extends Controller
 
         }
 
-        
+        return 'success';
 
     }
 }
