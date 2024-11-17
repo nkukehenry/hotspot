@@ -91,9 +91,9 @@ class CustomerController extends Controller
 
             $i=0;
 
-            while($i<10){
+            while($i<20){
 
-                $response = (Object) $this->paymentService->checkStatus($transactionId);
+               /* $response = (Object) $this->paymentService->checkStatus($transactionId);
 
                 Log::info("Payment Status Response: ".$i.": ". json_encode($response));
 
@@ -110,6 +110,27 @@ class CustomerController extends Controller
                     }
 
                     break;
+                }
+
+                */
+
+                $response =  Cache::get("callback_".$transactionId);
+
+                if($response){
+
+                       $response = (Object) $response;
+
+                      if($response->status=="success"  || $response->status == "closed"){
+                        $is_success= 1;
+                       }
+                       else if($response->status=="error"){
+                        $is_success= 2;
+                       }
+                       else{
+                           $is_success = 0;
+                       }
+   
+                       break;
                 }
 
                 $i++;
