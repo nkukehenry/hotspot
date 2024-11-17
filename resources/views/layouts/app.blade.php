@@ -57,13 +57,13 @@
 
     <div class="container mx-auto px-4">
         @if (session('success'))
-            <div class="alert alert-success">
+            <div class="alert alert-success text-center text-bold w-full mt-5 text-green-600"">
                 {{ session('success') }}
             </div>
         @endif
 
         @if (session('error'))
-            <div class="alert alert-danger text-center text-bold w-full mt-5 text-red-600 ">
+            <div class="alert alert-danger text-center text-bold w-full mt-5 text-red-600">
                 <h4>{{ session('error') }}</h4>
             </div>
         @endif
