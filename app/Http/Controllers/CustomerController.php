@@ -168,6 +168,14 @@ class CustomerController extends Controller
 
         }else{
 
+            
+            if($is_success==0){
+               
+                Cache::remember("callback_".$transactionId."_timedout", 60 * 60, function(){
+                    return true;
+                });
+            }
+
             $message = ($is_success==0)?'Payment still pending, please approve to receive a voucher':'Payment Failed. Try again.';
 
             $message_type = ($is_success==0)?'success':'error';
@@ -236,7 +244,11 @@ class CustomerController extends Controller
                     return $request->all();
             });
 
-            Log::info(Cache::get("callback_".$transactionId));
+            $timed_out = Cache::get("callback_".$transactionId."_timeout");
+            Log::info("Timed Out:: ".$timed_out);
+
+            if($timed_out)
+             $this->activateAccount($transactionId);
 
         }
 
