@@ -172,7 +172,7 @@ class CustomerController extends Controller
             if($is_success==0){
                
                 Cache::remember("callback_".$transactionId."_timedout", 60 * 60, function(){
-                    return true;
+                    return 10;
                 });
             }
 
@@ -244,7 +244,7 @@ class CustomerController extends Controller
                     return $request->all();
             });
 
-            $timed_out = Cache::get("callback_".$transactionId."_timeout");
+            $timed_out = Cache::get("callback_".$transactionId."_timedout");
             Log::info("Timed Out:: ".$timed_out);
 
             if($timed_out)
