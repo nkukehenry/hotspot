@@ -143,7 +143,7 @@ class CustomerController extends Controller
         // Send SMS
         $this->activateAccount($transactionId);
         // Redirect to voucher display
-        return redirect()->route('customer.voucher', $voucher->package->code);
+        return redirect()->route('customer.voucher', $finalVoucher->code);
 
         }else{
 
