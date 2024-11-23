@@ -101,7 +101,7 @@ class CustomerController extends Controller
 
                        $response = (Object) $response;
 
-                      if($response->status=="success"  || $response->status == "closed"){
+                      if($response->status=="approved"  || $response->status == "closed"){
                         $is_success= 1;
                        }
                        else if($response->status=="error"){
@@ -215,7 +215,7 @@ class CustomerController extends Controller
         
          $response = (Object) $request->all();
 
-         if($response && ($response->status =='success' || $response->status =='closed') ){
+         if($response && ($response->status =='approved' || $response->status =='closed') ){
 
             $transactionId = $response->tid;
 
