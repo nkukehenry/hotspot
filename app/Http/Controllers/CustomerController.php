@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Jobs\SendSmsJob;
 
 class CustomerController extends Controller
 {
@@ -94,27 +95,6 @@ class CustomerController extends Controller
 
             while($i<20){
 
-               /* $response = (Object) $this->paymentService->checkStatus($transactionId);
-
-                Log::info("Payment Status Response: ".$i.": ". json_encode($response));
-
-                if($response->data && $response->data->api_status){
-
-                    if($response->data->api_status=="success"){
-                     $is_success= 1;
-                    }
-                    else if($response->data->api_status=="error"){
-                     $is_success= 2;
-                    }
-                    else{
-                        $is_success = 0;
-                    }
-
-                    break;
-                }
-
-                */
-
                 $response =  Cache::get("callback_".$transactionId);
 
                 if($response){
@@ -160,10 +140,8 @@ class CustomerController extends Controller
         
          $transaction->voucher_id=$finalVoucher->id;
          $transaction->update();
-            // Send SMS
-        $smsService = new SMSService();
-        $smsService->sendVoucher($request->mobileNumber, $finalVoucher->code);
-
+        // Send SMS
+        $this->activateAccount($transactionId);
         // Redirect to voucher display
         return redirect()->route('customer.voucher', $voucher->package->code);
 
@@ -270,49 +248,10 @@ class CustomerController extends Controller
             $transaction->voucher_id=$finalVoucher->id;
             $transaction->update();
         
-         // Send SMS
-            $smsService = new SMSService();
-            $smsService->sendVoucher($mobileNumber,  $finalVoucher->code);
+            // Dispatch the job to send SMS
+            SendSmsJob::dispatch($mobileNumber, $finalVoucher->code);
 
         }
     }
 
-
-    function SendMessage($msg,$to){
-
-        $apikey= config("sms.key");
-        $username     = config("sms.user");
-
-        if(Str::startsWith($to,'256')):
-
-            $receiver=$to;
-
-        else:
-            $receiver= substr($to, -9);
-        endif;
-    
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.africastalking.com/version1/messaging',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS => 
-            '?username='.$username.'&to=256'. $receiver.'&message='.$msg,
-        CURLOPT_HTTPHEADER => array(
-            'Accept: application/json',
-            'Content-Type: application/x-www-form-urlencoded',
-            'apiKey:'.$apikey
-        ),
-        ));
-    
-        $response = curl_exec($curl);
-    
-        curl_close($curl);
-        echo $response;
-    }
 }
