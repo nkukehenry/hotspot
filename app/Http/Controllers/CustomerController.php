@@ -93,7 +93,7 @@ class CustomerController extends Controller
 
             $i=0;
 
-            while($i<20){
+            while($i<10){
 
                 $response =  Cache::get("callback_".$transactionId);
 
@@ -135,8 +135,8 @@ class CustomerController extends Controller
         $finalVoucher = $this->getVoucher($voucher);
 
         if(!$finalVoucher)
-            return redirect()->route('customer.packages', $voucher->package->code)
-            ->with('error', 'No available vouchers for this package. Contact Admin');
+            return redirect()->route('customer.payment', $voucher->package->code)
+            ->with('error', 'Failure to send voucher for this package. Contact Admin');
         
          $transaction->voucher_id=$finalVoucher->id;
          $transaction->update();
