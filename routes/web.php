@@ -24,7 +24,7 @@ Route::get('/wifi/{location}', [CustomerController::class, 'showPackages'])->nam
 //Route::get('/packages/{location}', [CustomerController::class, 'showPackages'])->name('customer.packages');
 Route::get('/payment/{package}', [CustomerController::class, 'showPayment'])->name('customer.payment');
 Route::post('/payment/{package}', [CustomerController::class, 'processPayment'])->name('customer.processPayment');
-Route::get('/voucher/{transactionId}', [CustomerController::class, 'showVoucher'])->name('customer.voucher');
+Route::get('/voucher/{transaction}', [CustomerController::class, 'showVoucher'])->name('customer.voucher');
 Route::get('/transactions', [CustomerController::class, 'showTransactions'])->name('customer.transactions');
 Route::any('/jpesa/callback',[CustomerController::class, 'handleCallback']);
 
