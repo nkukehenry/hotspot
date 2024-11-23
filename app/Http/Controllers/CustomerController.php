@@ -12,6 +12,7 @@ use App\Services\SMSService;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
@@ -274,5 +275,44 @@ class CustomerController extends Controller
             $smsService->sendVoucher($mobileNumber,  $finalVoucher->code);
 
         }
+    }
+
+
+    function SendMessage($msg,$to){
+
+        $apikey= config("sms.key");
+        $username     = config("sms.user");
+
+        if(Str::startsWith($to,'256')):
+
+            $receiver=$to;
+
+        else:
+            $receiver= substr($to, -9);
+        endif;
+    
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.africastalking.com/version1/messaging',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => 
+            '?username='.$username.'&to=256'. $receiver.'&message='.$msg,
+        CURLOPT_HTTPHEADER => array(
+            'Accept: application/json',
+            'Content-Type: application/x-www-form-urlencoded',
+            'apiKey:'.$apikey
+        ),
+        ));
+    
+        $response = curl_exec($curl);
+    
+        curl_close($curl);
+        echo $response;
     }
 }
