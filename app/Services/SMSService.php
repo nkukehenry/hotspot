@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class SMSService
 {
@@ -22,6 +23,7 @@ class SMSService
         } else {
             $receiver = '256' . substr($to, -9); // Assuming the number is in a local format
         }
+        Log::info("Number: ".$receiver);
 
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -47,6 +49,7 @@ class SMSService
 
         $response = curl_exec($curl);
         curl_close($curl);
+        Log::info($response);
         // Optionally log the response or handle errors
         return $response;
     }
