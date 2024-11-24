@@ -126,7 +126,7 @@ class CustomerController extends Controller
         }
 
         // Clear the relevant cache after the transaction is recorded
-        Cache::forget('reports_data_' . md5(json_encode(request()->all()))); // Clear specific cache for reports
+        Cache::forget('reports_data'); // Clear specific cache for reports
         Cache::forget('package_revenue_data'); // Clear package revenue cache
         Cache::forget('location_revenue_data'); // Clear location revenue cache
 
@@ -239,7 +239,7 @@ class CustomerController extends Controller
 
 
         $transaction = Transaction::where('transaction_id',$transactionId)->first();
-        $mobileNumber= $transaction->mobile;
+        $mobileNumber= $transaction->mobile_number;
         $voucher = Voucher::find($transaction->voucher_id);
         $finalVoucher = $this->getVoucher($voucher);
 

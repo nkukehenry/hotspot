@@ -54,7 +54,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
 });
 
 Route::get('/test',function(SMSService $sMSService){
-    $sMSService->sendVoucher("0777245670","98878878787");
+    $sMSService->sendVoucher("256777245670","98878878787");
 });
 
 require __DIR__ . '/auth.php';

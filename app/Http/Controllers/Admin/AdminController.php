@@ -56,7 +56,7 @@ class AdminController extends Controller
     public function showReports(Request $request)
     {
         // Define a unique cache key based on the request parameters
-        $cacheKey = 'reports_data_' . md5(json_encode($request->all()));
+        $cacheKey = 'reports_data';
 
         // Attempt to retrieve the cached data
         $salesData = Cache::remember($cacheKey, 60 * 60, function () use ($request) {
@@ -87,7 +87,7 @@ class AdminController extends Controller
         });
 
         // Prepare data for pie charts with the same filters applied
-        $packageRevenueData = Cache::remember('package_revenue_data_' . $cacheKey, 60 * 60, function () use ($request) {
+        $packageRevenueData = Cache::remember('package_revenue_data' , 60 * 60, function () use ($request) {
             $query = DB::table('transactions')
                 ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
                 ->join('packages', 'vouchers.package_id', '=', 'packages.id')
@@ -106,7 +106,7 @@ class AdminController extends Controller
             return $query->groupBy('packages.id', 'packages.name')->get();
         });
 
-        $locationRevenueData = Cache::remember('location_revenue_data_' . $cacheKey, 60 * 60, function () use ($request) {
+        $locationRevenueData = Cache::remember('location_revenue_data' , 60 * 60, function () use ($request) {
             $query = DB::table('transactions')
                 ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
                 ->join('packages', 'vouchers.package_id', '=', 'packages.id')
