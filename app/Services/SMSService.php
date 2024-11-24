@@ -33,7 +33,11 @@ class SMSService
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => '?username=' . $username . '&to=' . $receiver . '&message=' . urlencode($msg),
+            CURLOPT_POSTFIELDS => http_build_query([
+                'username' => $username,
+                'to' => $receiver,
+                'message' => $msg
+            ]),
             CURLOPT_HTTPHEADER => array(
                 'Accept: application/json',
                 'Content-Type: application/x-www-form-urlencoded',
@@ -43,7 +47,6 @@ class SMSService
 
         $response = curl_exec($curl);
         curl_close($curl);
-
         // Optionally log the response or handle errors
         return $response;
     }

@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
+use App\Services\SMSService;
 use Illuminate\Support\Facades\Route;
 
 
@@ -50,6 +51,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'admin'], function () {
     Route::get('/packages/{locationId}', [AdminController::class, 'getPackagesByLocation'])->name('admin.locationPackages');
     Route::post('/admin/vouchers/bulk-action', [AdminController::class, 'bulkAction'])->name('admin.vouchers.bulkAction');
     Route::post('/users', [UserController::class, 'store'])->name('admin.addUser');
+});
+
+Route::get('/test',function(SMSService $sMSService){
+    $sMSService->sendVoucher("0777245670","98878878787");
 });
 
 require __DIR__ . '/auth.php';
