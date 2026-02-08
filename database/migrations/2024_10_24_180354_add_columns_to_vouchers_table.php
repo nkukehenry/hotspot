@@ -11,11 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('vouchers', function (Blueprint $table) {
-            $table->string('code')->unique();
-            $table->foreignId('package_id')->constrained()->onDelete('cascade');
-            $table->boolean('is_used')->default(false);
-        });
+        //ignore
     }
 
     /**
