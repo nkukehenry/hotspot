@@ -1,91 +1,36 @@
-<!-- resources/views/admin/dashboard.blade.php -->
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-gauge mr-2 text-blue-500"></i>Dashboard</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Sales by Package</h3>
-                <canvas id="salesChart"></canvas>
-            </div>
-            <div>
-                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Sales by Site</h3>
-                <canvas id="siteChart"></canvas>
-            </div>
+<div class="flex items-center justify-center min-h-[60vh]">
+    <div class="max-w-md w-full text-center space-y-6 p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+        <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
+            <i class="fas fa-user-shield text-4xl"></i>
         </div>
+        
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">Welcome, {{ Auth::user()->name }}</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                You are currently logged into the **{{ config('app.name') }}** administrative console.
+            </p>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+            <div class="flex items-center justify-center space-x-2 text-orange-500 mb-2">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="text-[10px] font-black uppercase tracking-widest">Configuration Notice</span>
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400">
+                No personalized dashboard has been configured for your specific role yet. You can still navigate using the sidebar menu if you have the necessary permissions.
+            </p>
+        </div>
+
+        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">
+            Please contact the platform owner if you believe this is an error.
+        </p>
     </div>
+</div>
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Sales by Package Chart
-        var ctxSales = document.getElementById('salesChart').getContext('2d');
-        var salesChart = new Chart(ctxSales, {
-            type: 'bar',
-            data: {
-                labels: @json($salesData->pluck('package_name')),
-                datasets: [{
-                    label: 'Sales',
-                    data: @json($salesData->pluck('sales_count')),
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Sales Count'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Packages'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Sales by Site Chart
-        var ctxSite = document.getElementById('siteChart').getContext('2d');
-        var siteChart = new Chart(ctxSite, {
-            type: 'bar',
-            data: {
-                labels: @json($salesData->pluck('site_name')->unique()),
-                datasets: [{
-                    label: 'Sales by Site',
-                    data: @json($salesData->groupBy('site_name')->map->sum('sales_count')),
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Sales Count'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Sites'
-                        }
-                    }
-                }
-            }
-        });
-    </script>
+{{-- No scripts needed for fallback --}}
 @endsection

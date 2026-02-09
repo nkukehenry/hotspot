@@ -25,30 +25,77 @@ class AdminController extends Controller
     {
         $this->ledgerService = $ledgerService;
     }
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
+        $dateFrom = $request->input('date_from', now()->startOfMonth()->toDateString());
+        $dateTo = $request->input('date_to', now()->toDateString());
 
-        // Fetch sales data for the dashboard
-        $query = DB::table('transactions')
-            ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
-            ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-            ->join('sites', 'packages.site_id', '=', 'sites.id')
-            ->select(
-                'packages.name as package_name',
-                'sites.name as site_name',
-                DB::raw('count(transactions.id) as sales_count'),
-                DB::raw('sum(packages.cost) as revenue')
-            );
+        // 1. Owner Dashboard Data (Platform Wide)
+        if ($user->can('view_owner_dashboard')) {
+            $baseQuery = Transaction::whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+            
+            $stats = [
+                'total_revenue' => (clone $baseQuery)->sum('amount'),
+                'total_vouchers' => Voucher::count(),
+                'active_vouchers' => Voucher::where('is_used', false)->count(),
+                'total_sites' => Site::count(),
+                'recent_transactions' => (clone $baseQuery)->with(['site', 'agent'])->latest()->take(5)->get(),
+                'avg_transaction' => (clone $baseQuery)->count() > 0 ? (clone $baseQuery)->sum('amount') / (clone $baseQuery)->count() : 0,
+            ];
 
-        if ($user->site_id) {
-             $query->where('sites.id', $user->site_id);
+            $sitePerformance = DB::table('transactions')
+                ->join('sites', 'transactions.site_id', '=', 'sites.id')
+                ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+                ->select('sites.name', DB::raw('sum(amount) as revenue'), DB::raw('count(transactions.id) as sales_count'))
+                ->groupBy('sites.id', 'sites.name')
+                ->get();
+
+            // Monthly Trend for Chart
+            $trendData = DB::table('transactions')
+                ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d') as date"), DB::raw('sum(amount) as revenue'))
+                ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            return view('admin.dashboard.owner', compact('stats', 'sitePerformance', 'trendData', 'dateFrom', 'dateTo'));
         }
 
-        $salesData = $query->groupBy('packages.id', 'packages.name', 'sites.id', 'sites.name')
-            ->get();
+        // 2. Manager Dashboard Data (Site Specific)
+        if ($user->can('view_manager_dashboard') || $user->can('view_site_dashboard')) {
+            $siteId = $user->site_id;
+            $baseQuery = Transaction::where('site_id', $siteId)
+                ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+            
+            $stats = [
+                'site_revenue' => (clone $baseQuery)->sum('amount'),
+                'available_vouchers' => Voucher::where('site_id', $siteId)->where('is_used', false)->count(),
+                'total_agents' => User::role('Agent')->where('site_id', $siteId)->count(),
+                'recent_sales' => (clone $baseQuery)->latest()->take(5)->get(),
+            ];
 
-        return view('admin.dashboard', compact('salesData'));
+            $agentPerformance = DB::table('transactions')
+                ->join('users', 'transactions.agent_id', '=', 'users.id')
+                ->where('transactions.site_id', $siteId)
+                ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+                ->select('users.name', DB::raw('sum(amount) as revenue'), DB::raw('count(transactions.id) as sales_count'))
+                ->groupBy('users.id', 'users.name')
+                ->get();
+
+            $packagePerformance = DB::table('transactions')
+                ->join('packages', 'transactions.package_id', '=', 'packages.id')
+                ->where('transactions.site_id', $siteId)
+                ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+                ->select('packages.name', DB::raw('count(transactions.id) as sales_count'))
+                ->groupBy('packages.id', 'packages.name')
+                ->get();
+
+            return view('admin.dashboard.manager', compact('stats', 'agentPerformance', 'packagePerformance', 'dateFrom', 'dateTo'));
+        }
+
+        // Fallback or Basic View
+        return view('admin.dashboard');
     }
 
     public function showUsers()
