@@ -81,7 +81,7 @@
                 <a href="#" class="hover:underline me-4 md:me-6">Home</a>
             </li>
             <li>
-                <a href="{{ route('customer.locations') }}" class="hover:underline me-4 md:me-6">Locations</a>
+                <a href="{{ route('customer.sites') }}" class="hover:underline me-4 md:me-6">Sites</a>
             </li>
             <li>
                 <a href="{{ route('customer.transactions') }}" class="hover:underline me-4 md:me-6">My Transactions</a>

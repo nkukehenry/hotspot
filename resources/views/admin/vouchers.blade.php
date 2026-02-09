@@ -2,29 +2,31 @@
 
 @section('content')
     <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Manage Vouchers</h1>
+        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-ticket-alt mr-2 text-blue-500"></i>Manage Vouchers</h1>
 
         <!-- Add Vouchers Button -->
+        @can('create_vouchers')
         <div class="mb-4">
             <button type="button" onclick="openUploadModal()"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-md">
-                Add Vouchers
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg transition duration-200">
+                <i class="fas fa-plus mr-2"></i>Add Vouchers
             </button>
         </div>
+        @endcan
 
         <!-- Filter Form -->
         <form method="GET" action="{{ route('admin.vouchers') }}" class="mb-4">
             <div class="flex space-x-4">
                 <div class="w-1/3">
-                    <label for="location_id"
-                        class="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Location</label>
-                    <select name="location_id" id="location_id" onchange="filterPackages()"
+                    <label for="site_id"
+                        class="block text-gray-700 dark:text-gray-300 font-semibold mb-1">Site</label>
+                    <select name="site_id" id="site_id" onchange="filterPackages()"
                         class="block w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500">
-                        <option value="">All Locations</option>
-                        @foreach ($locations as $location)
-                            <option value="{{ $location->id }}"
-                                {{ request('location_id') == $location->id ? 'selected' : '' }}>
-                                {{ $location->name }}
+                        <option value="">All Sites</option>
+                        @foreach ($sites as $site)
+                            <option value="{{ $site->id }}"
+                                {{ request('site_id') == $site->id ? 'selected' : '' }}>
+                                {{ $site->name }}
                             </option>
                         @endforeach
                     </select>
@@ -45,8 +47,8 @@
                 </div>
                 <div class="flex items-end w-1/3">
                     <button type="submit"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-md">
-                        Filter
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-md flex items-center">
+                        <i class="fas fa-filter mr-2"></i>Filter
                     </button>
                 </div>
             </div>
@@ -57,10 +59,13 @@
             @csrf
             <div class="flex justify-between mb-4">
                 <div>
+                    @can('delete_vouchers')
                     <button type="button" onclick="deleteSelected()"
                         class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-4 rounded shadow-md">
                         Delete Selected
                     </button>
+                    @endcan
+                    @can('edit_vouchers')
                     <button type="button" onclick="changeStatus('used')"
                         class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-4 rounded shadow-md">
                         Mark as Used
@@ -69,16 +74,18 @@
                         class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-4 rounded shadow-md">
                         Mark as Available
                     </button>
+                    @endcan
                 </div>
             </div>
 
             <!-- Vouchers Table -->
-            <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden dark:bg-gray-800">
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden dark:bg-gray-800">
                 <thead>
                     <tr class="bg-gray-100 dark:bg-gray-700">
                         <th class="py-2 px-4"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
                         <th class="py-2 px-4 text-gray-900 dark:text-white">Voucher Code</th>
-                        <th class="py-2 px-4 text-gray-900 dark:text-white">Location</th>
+                        <th class="py-2 px-4 text-gray-900 dark:text-white">Site</th>
                         <th class="py-2 px-4 text-gray-900 dark:text-white">Package</th>
                         <th class="py-2 px-4 text-gray-900 dark:text-white">Price</th>
                         <th class="py-2 px-4 text-gray-900 dark:text-white">Status</th>
@@ -90,11 +97,11 @@
                             <td class="py-2 px-4 text-center">
                                 <input type="checkbox" name="voucher_ids[]" value="{{ $voucher->id }}">
                             </td>
-                            <td class="py-2 px-4 text-center">{{ $voucher->code }}</td>
-                            <td class="py-2 px-4 text-center">{{ $voucher->location_name }}</td>
-                            <td class="py-2 px-4 text-center">{{ $voucher->package_name }}</td>
-                            <td class="py-2 px-4 text-center">{{ number_format($voucher->cost) }}</td>
-                            <td class="py-2 px-4 text-center">
+                            <td class="py-2 px-4 text-center whitespace-nowrap">{{ Str::mask($voucher->code, '*', 0, -4) }}</td>
+                            <td class="py-2 px-4 text-center whitespace-nowrap">{{ $voucher->site_name }}</td>
+                            <td class="py-2 px-4 text-center whitespace-nowrap">{{ $voucher->package_name }}</td>
+                            <td class="py-2 px-4 text-center whitespace-nowrap">{{ number_format($voucher->cost) }}</td>
+                            <td class="py-2 px-4 text-center whitespace-nowrap">
                                 <span
                                     class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $voucher->is_used ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
                                     {{ $voucher->is_used ? 'Used' : 'Available' }}
@@ -103,7 +110,8 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+                </table>
+            </div>
         </form>
 
         <!-- Pagination Links -->
@@ -121,15 +129,15 @@
                     id="upload-form">
                     @csrf
                     <div class="mb-4">
-                        <label for="upload_location_id"
+                        <label for="upload_site_id"
                             class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Select
-                            Location</label>
-                        <select name="location_id" id="upload_location_id"
+                            Site</label>
+                        <select name="site_id" id="upload_site_id"
                             class="block w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500"
                             onchange="filterUploadPackages()">
-                            <option value="">Select a location</option>
-                            @foreach ($locations as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            <option value="">Select a site</option>
+                            @foreach ($sites as $site)
+                                <option value="{{ $site->id }}">{{ $site->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -168,15 +176,15 @@
         }
 
         function filterPackages() {
-            const locationId = document.getElementById('location_id').value;
+            const siteId = document.getElementById('site_id').value;
             const packageSelect = document.getElementById('package_id');
 
             // Clear existing options
             packageSelect.innerHTML = '<option value="">All Packages</option>';
 
-            if (locationId) {
-                // Fetch packages based on selected location
-                fetch(`{{ route('admin.locationPackages', '') }}/${locationId}`)
+            if (siteId) {
+                // Fetch packages based on selected site
+                fetch(`{{ route('admin.sitePackages', '') }}/${siteId}`)
                     .then(response => response.json())
                     .then(data => {
                         console.log(data)
@@ -191,15 +199,15 @@
         }
 
         function filterUploadPackages() {
-            const locationId = document.getElementById('upload_location_id').value;
+            const siteId = document.getElementById('upload_site_id').value;
             const packageSelect = document.getElementById('package');
 
             // Clear existing options
             packageSelect.innerHTML = '<option value="">Select a package</option>';
 
-            if (locationId) {
-                // Fetch packages based on selected location
-                fetch(`{{ route('admin.locationPackages', '') }}/${locationId}`)
+            if (siteId) {
+                // Fetch packages based on selected site
+                fetch(`{{ route('admin.sitePackages', '') }}/${siteId}`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(package => {

@@ -9,16 +9,14 @@
          </button>
          <div class="collapse navbar-collapse" id="navbarNav">
              <ul class="navbar-nav">
+                 @role('Owner')
                  <li class="nav-item">
-                     <a class="nav-link" href="{{ route('admin.locations') }}">
-                         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
-                             xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                             <path
-                                 d="M1 5h1.424a3.228 3.228 0 0 0 6.152 0H19a1 1 0 1 0 0-2H8.576a3.228 3.228 0 0 0-6.152 0H1a1 1 0 1 0 0 2Zm18 4h-1.424a3.228 3.228 0 0 0-6.152 0H1a1 1 0 1 0 0 2h10.424a3.228 3.228 0 0 0 6.152 0H19a1 1 0 0 0 0-2Zm0 6H8.576a3.228 3.228 0 0 0-6.152 0H1a1 1 0 0 0 0 2h1.424a3.228 3.228 0 0 0 6.152 0H19a1 1 0 0 0 0-2Z" />
-                         </svg>
-                         Locations
+                     <a class="nav-link" href="{{ route('admin.sites') }}">
+                         <i class="fas fa-fw fa-map-marker-alt"></i>
+                         Sites
                      </a>
                  </li>
+                 @endrole
                  <li class="nav-item">
                      <a class="nav-link" href="{{ route('admin.packages') }}">
                          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"

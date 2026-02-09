@@ -14,6 +14,7 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/simple-line-icons/2.5.5/css/simple-line-icons.min.css"
         integrity="sha512-QKC1UZ/ZHNgFzVKSAhV5v5j73eeL9EEN289eKAEFaAjgAiobVAnVv/AGuPbXsKl1dNoel3kNr6PYnSiTzVVBCw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900">
@@ -66,11 +67,13 @@
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                                         role="menuitem">Dashboard</a>
                                 </li>
+                                @can('manage_settings')
                                 <li>
                                     <a href="{{ route('admin.settings') }}"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                                         role="menuitem">Settings</a>
                                 </li>
+                                @endcan
                                 <li>
                                     <a href="{{ route('logout') }}"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
@@ -96,60 +99,106 @@
             <ul class="space-y-2 font-medium">
                 <li>
                     <a href="{{ route('admin.dashboard') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.dashboard') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-home w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="ms-3">Dashboard</span>
+                            class="icon-home w-5 h-5 transition duration-75 {{ request()->routeIs('admin.dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="ms-3 {{ request()->routeIs('admin.dashboard') ? 'font-bold' : '' }}">Dashboard</span>
                     </a>
                 </li>
+
+                @canany(['manage_sites', 'view_sites','create_sites','edit_sites','delete_sites'])
                 <li>
-                    <a href="{{ route('admin.locations') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <a href="{{ route('admin.sites') }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.sites*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-location-pin w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Locations</span>
+                            class="icon-location-pin w-5 h-5 transition duration-75 {{ request()->routeIs('admin.sites*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.sites*') ? 'font-bold' : '' }}">Sites</span>
                     </a>
                 </li>
+                @endcan
+                @can('view_packages')
                 <li>
                     <a href="{{ route('admin.packages') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.packages*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-basket w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Packages</span>
+                            class="icon-basket w-5 h-5 transition duration-75 {{ request()->routeIs('admin.packages*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.packages*') ? 'font-bold' : '' }}">Packages</span>
                     </a>
                 </li>
+                @endcan
+                @can('view_vouchers')
                 <li>
                     <a href="{{ route('admin.vouchers') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.vouchers*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-tag w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Vouchers</span>
+                            class="icon-tag w-5 h-5 transition duration-75 {{ request()->routeIs('admin.vouchers*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.vouchers*') ? 'font-bold' : '' }}">Vouchers</span>
                     </a>
                 </li>
+                @endcan
+                @can('view_users')
                 <li>
                     <a href="{{ route('admin.users') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.users*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-user w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Users</span>
+                            class="icon-user w-5 h-5 transition duration-75 {{ request()->routeIs('admin.users*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.users*') ? 'font-bold' : '' }}">Users</span>
                     </a>
                 </li>
+                @endcan
+                @canany(['view_reports', 'view_transactions'])
                 <li>
-                    <a href="{{ route('admin.reports') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <button type="button"
+                        class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 {{ request()->routeIs('admin.reports*') || request()->routeIs('admin.transactions*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}"
+                        aria-controls="dropdown-reports" data-collapse-toggle="dropdown-reports">
                         <i
-                            class="icon-chart w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Reports</span>
+                            class="icon-chart w-5 h-5 transition duration-75 {{ request()->routeIs('admin.reports*') || request()->routeIs('admin.transactions*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 text-left whitespace-nowrap {{ request()->routeIs('admin.reports*') || request()->routeIs('admin.transactions*') ? 'font-bold' : '' }}">Reports & Analytics</span>
+                        <svg class="w-3 h-3 text-gray-500 dark:text-gray-400 transition duration-75 group-hover:text-gray-900 dark:group-hover:text-white"
+                            aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 1 4 4 4-4" />
+                        </svg>
+                    </button>
+                    <ul id="dropdown-reports" class="{{ request()->routeIs('admin.reports*') || request()->routeIs('admin.transactions*') ? '' : 'hidden' }} py-2 space-y-2">
+                        @can('view_reports')
+                        <li>
+                            <a href="{{ route('admin.reports') }}"
+                                class="flex items-center w-full p-2 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 {{ request()->routeIs('admin.reports*') ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-900' }}">Sales
+                                Overview</a>
+                        </li>
+                        @endcan
+                        @can('view_transactions')
+                        <li>
+                            <a href="{{ route('admin.transactions') }}"
+                                class="flex items-center w-full p-2 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 {{ request()->routeIs('admin.transactions*') ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-900' }}">Transaction
+                                History</a>
+                        </li>
+                        @endcan
+                    </ul>
+                </li>
+                @endcanany
+                @role('Owner')
+                <li>
+                    <a href="{{ route('admin.roles.index') }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.roles*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <i
+                            class="icon-shield w-5 h-5 transition duration-75 {{ request()->routeIs('admin.roles*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.roles*') ? 'font-bold' : '' }}">Roles & Permissions</span>
                     </a>
                 </li>
+                @endrole
+
+                @can('manage_settings')
                 <li>
                     <a href="{{ route('admin.settings') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.settings*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-settings w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Settings</span>
+                            class="icon-settings w-5 h-5 transition duration-75 {{ request()->routeIs('admin.settings*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.settings*') ? 'font-bold' : '' }}">Settings</span>
                     </a>
                 </li>
+                @endcan
             </ul>
         </div>
     </aside>

@@ -28,6 +28,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        if ($user->can('view_owner_dashboard') || $user->can('view_manager_dashboard')) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        if ($user->can('view_agent_dashboard')) {
+            return redirect()->intended(route('agent.dashboard'));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

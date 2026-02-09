@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\HasSiteScope;
+
 class Voucher extends Model
 {
-    protected $fillable = ['code', 'package_id', 'is_used'];
+    use HasSiteScope;
+
+    protected $fillable = ['code', 'package_id', 'is_used', 'site_id'];
 
     public function markAsUsed()
     {
@@ -18,5 +22,10 @@ class Voucher extends Model
     public function package()
     {
         return $this->belongsTo(Package::class);
+    }
+    
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
     }
 }

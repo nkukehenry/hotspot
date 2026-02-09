@@ -5,13 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Helpers\CodeGenerator;
 
+use App\Traits\HasSiteScope;
+
 class Package extends Model
 {
-    protected $fillable = ['name', 'cost', 'description', 'location_id','code'];
+    use HasSiteScope;
 
-    public function location()
+    protected $fillable = ['name', 'cost', 'description', 'site_id','code'];
+
+    public function site()
     {
-        return $this->belongsTo(Location::class);
+        return $this->belongsTo(Site::class);
+    }
+
+    public function vouchers()
+    {
+        return $this->hasMany(Voucher::class);
     }
 
     public function getIconAttribute($value)

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Location;
+use App\Models\Site;
 use App\Models\Package;
 use App\Models\Voucher;
 use App\Models\Transaction;
@@ -13,33 +13,43 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use App\Jobs\SendSmsJob;
 
 class CustomerController extends Controller
 {
 
     private PaymentService $paymentService;
+    private \App\Services\FeeService $feeService;
+    private \App\Services\LedgerService $ledgerService;
 
-    function __construct(PaymentService $paymentService){
+    function __construct(PaymentService $paymentService, \App\Services\FeeService $feeService, \App\Services\LedgerService $ledgerService){
         $this->paymentService = $paymentService;
+        $this->feeService = $feeService;
+        $this->ledgerService = $ledgerService;
     }
 
-    public function showLocations()
+    public function showSites()
     {
-        $locations = Location::all();
-        return view('customer.locations', compact('locations'));
+        $sites = Site::all();
+        $sites = Site::all();
+        return view('customer.sites', compact('sites')); 
     }
 
-    public function showPackages($locationCode)
+    public function showPackages($siteCode)
     {
-        $location = Location::where('code',$locationCode)->first();
-        $packages = Package::where( 'location_id', $location->id)->get();
-        return view('customer.packages', compact('packages'));
+        $site = Site::where('site_code',$siteCode)->first();
+        if(!$site){
+             $site = Site::where('slug',$siteCode)->firstOrFail();
+        }
+        
+        $packages = Package::where( 'site_id', $site->id)->get();
+        return view('customer.packages', compact('packages', 'site'));
     }
 
     public function showPayment($packageCode)
     {
-        $package = Package::where('code',$packageCode)->first();
+        $package = Package::where('code',$packageCode)->firstOrFail();
         return view('customer.payment', compact('package'));
     }
 
@@ -54,37 +64,49 @@ class CustomerController extends Controller
         $transactionId = 'TXN' . rand(1000, 9999);
 
         // Retrieve the package
-        $package = Package::where('code', $packageCode)->first();
+        $package = Package::where('code', $packageCode)->firstOrFail();
 
         // Check for available voucher
-        $voucher = Voucher::where('is_used', 0)->first();
+        $voucher = Voucher::where('package_id', $package->id) 
+                        ->where('is_used', 0)
+                        ->first();
+        
 
         // If no voucher is available, redirect with an error message
         if (!$voucher) {
-            return redirect()->route('customer.packages', $package->location->code)
-                ->with('error', 'Voucher system temporarily unavailable.');
+            return redirect()->route('customer.packages', $package->site->site_code ?? $package->site->slug)
+                ->with('error', 'Voucher system temporarily unavailable (Out of Stock).');
         }
 
         // Set cookie for mobile number
         setcookie('mobile_number', $request->mobileNumber, time() + (86400 * 30), "/"); // 30 days
+
+        // Calculate Fees
+        $feeData = $this->feeService->calculateFees($package->site, $package->cost);
 
         // Record the transaction
         $transaction = Transaction::create([
             'voucher_id' => $voucher->id,
             'transaction_id' => $transactionId,
             'mobile_number' => $request->mobileNumber,
-            'amount' => $package->cost,
+            'amount' => $feeData['amount'],
+            'customer_fee' => $feeData['customer_fee'],
+            'site_fee' => $feeData['site_fee'],
+            'total_fee' => $feeData['total_fee'],
+            'total_amount' => $feeData['total_amount'],
             'package_id' => $package->id,
-            'status' => 'completed',
+            'site_id' => $package->site_id,
+            'agent_id' => Auth::check() ? Auth::id() : null,
+            'status' => 'pending', 
         ]);
 
-        $response = (Object) $this->paymentService->pay($package->cost, $request->mobileNumber, $transactionId);
+        $response = (Object) $this->paymentService->pay($feeData['total_amount'], $request->mobileNumber, $transactionId);
 
         Log::info("Payment Response: " . json_encode($response));
 
         $is_success= 0; //o is pending, 1 is  successful, 2 is failed
 
-        if($response->data && $response->data->api_status =='success' ){
+        if($response->data && isset($response->data->api_status) && $response->data->api_status =='success' ){
 
             $transaction->transaction_id = $response->data->tid;
             $transaction->update();
@@ -120,25 +142,32 @@ class CustomerController extends Controller
             }
 
         }else{
-
-            return redirect()->route('customer.payment', $voucher->package->code)
-                    ->with('error', 'Payment Initiattion Failed. Try again.');
+            
+            $transaction->status = 'failed';
+            $transaction->save();
+            
+            return redirect()->route('customer.payment', $package->code)
+                    ->with('error', 'Payment Initiation Failed. Try again.');
         }
 
         // Clear the relevant cache after the transaction is recorded
         Cache::forget('reports_data'); // Clear specific cache for reports
         Cache::forget('package_revenue_data'); // Clear package revenue cache
-        Cache::forget('location_revenue_data'); // Clear location revenue cache
+        Cache::forget('location_revenue_data'); // Clear location revenue cache needs to be updated to site_revenue_data?
 
         if($is_success== 1){
 
         $finalVoucher = $this->getVoucher($voucher);
 
-        if(!$finalVoucher)
-            return redirect()->route('customer.payment', $voucher->package->code)
-            ->with('error', 'Failure to send voucher for this package. Contact Admin');
+        if(!$finalVoucher){
+            $transaction->status = 'paid_no_voucher';
+            $transaction->save();
+            return redirect()->route('customer.payment', $package->code)
+            ->with('error', 'Payment received but failure to assign voucher. Contact Admin');
+        }
         
          $transaction->voucher_id=$finalVoucher->id;
+         $transaction->status = 'completed';
          $transaction->update();
         // Send SMS
         $this->activateAccount($transactionId);
@@ -159,7 +188,7 @@ class CustomerController extends Controller
 
             $message_type = ($is_success==0)?'success':'error';
 
-            return redirect()->route('customer.payment', $voucher->package->code)
+            return redirect()->route('customer.payment', $package->code)
             ->with($message_type,$message );
         }
     }
@@ -176,19 +205,22 @@ class CustomerController extends Controller
           $voucher = Voucher::find($voucher->id);
            // Check if the voucher is already used
            if ($voucher->is_used) {
-            // Find another voucher that is not used and has the same package
+            // Find another voucher that is not used and has the same package AND SITE
             $newVoucher = Voucher::where('package_id', $voucher->package_id)
+                ->where('site_id', $voucher->site_id)
                 ->where('is_used', 0)
                 ->first();
 
             // If a new voucher is found, mark it as used
             if ($newVoucher) {
-                $this->markVoucherAsUsed($newVoucher); // Assuming markAsUsed() updates the is_used field
+                $this->markVoucherAsUsed($newVoucher->id); 
                 return $newVoucher; // Use the new voucher for display
             } else {
                 // If no available voucher is found, you can handle this case as needed
                 return false;
             }
+        } else {
+            $this->markVoucherAsUsed($voucher->id);
         }
 
         return $voucher;
@@ -239,14 +271,24 @@ class CustomerController extends Controller
 
 
         $transaction = Transaction::where('transaction_id',$transactionId)->first();
+        if(!$transaction) return;
+        
         $mobileNumber= $transaction->mobile_number;
         $voucher = Voucher::find($transaction->voucher_id);
+        
         $finalVoucher = $this->getVoucher($voucher);
 
         if($finalVoucher){
             
             $transaction->voucher_id=$finalVoucher->id;
+            $transaction->status = 'completed';
             $transaction->update();
+            
+            // Record in Ledger
+            $this->ledgerService->recordTransaction($transaction);
+
+            // Distribute Fees
+            $this->feeService->distributeFees($transaction);
         
             // Dispatch the job to send SMS
             SendSmsJob::dispatch($mobileNumber, $finalVoucher->code);

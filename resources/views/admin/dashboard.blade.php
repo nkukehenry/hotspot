@@ -3,15 +3,15 @@
 
 @section('content')
     <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-gauge mr-2 text-blue-500"></i>Dashboard</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
                 <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Sales by Package</h3>
                 <canvas id="salesChart"></canvas>
             </div>
             <div>
-                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Sales by Location</h3>
-                <canvas id="locationChart"></canvas>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Sales by Site</h3>
+                <canvas id="siteChart"></canvas>
             </div>
         </div>
     </div>
@@ -54,15 +54,15 @@
             }
         });
 
-        // Sales by Location Chart
-        var ctxLocation = document.getElementById('locationChart').getContext('2d');
-        var locationChart = new Chart(ctxLocation, {
+        // Sales by Site Chart
+        var ctxSite = document.getElementById('siteChart').getContext('2d');
+        var siteChart = new Chart(ctxSite, {
             type: 'bar',
             data: {
-                labels: @json($salesData->pluck('location_name')->unique()),
+                labels: @json($salesData->pluck('site_name')->unique()),
                 datasets: [{
-                    label: 'Sales by Location',
-                    data: @json($salesData->groupBy('location_name')->map->sum('sales_count')),
+                    label: 'Sales by Site',
+                    data: @json($salesData->groupBy('site_name')->map->sum('sales_count')),
                     backgroundColor: 'rgba(153, 102, 255, 0.2)',
                     borderColor: 'rgba(153, 102, 255, 1)',
                     borderWidth: 1
@@ -81,7 +81,7 @@
                     x: {
                         title: {
                             display: true,
-                            text: 'Locations'
+                            text: 'Sites'
                         }
                     }
                 }

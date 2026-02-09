@@ -1,4 +1,4 @@
-<!-- resources/views/customer/locations.blade.php -->
+<!-- resources/views/customer/sites.blade.php -->
 @extends('layouts.home')
 
 @section('content')

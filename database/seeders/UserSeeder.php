@@ -15,21 +15,31 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $customerRole = Role::firstOrCreate(['name' => 'customer']);
+        // Create Platform Owner
+        $ownerEmail = 'admin@neonent.com';
+        $owner = User::firstOrCreate(
+            ['email' => $ownerEmail],
+            [
+                'name' => 'Platform Owner',
+                'password' => Hash::make('password'),
+                'site_id' => null, // Platform owner belongs to no specific site (or all)
+            ]
+        );
+        $owner->assignRole('Owner');
 
-        $admin = User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('password'),
-        ]);
-        $admin->assignRole($adminRole);
-
-        $customer = User::create([
-            'name' => 'Customer User',
-            'email' => 'customer@example.com',
-            'password' => Hash::make('password'),
-        ]);
-        $customer->assignRole($customerRole);
+        // Example Site Manager (optional, mainly for testing)
+        // You might want to get a site ID first
+        $site = \App\Models\Site::first();
+        if ($site) {
+             $manager = User::firstOrCreate(
+                ['email' => 'manager@' . $site->slug . '.com'],
+                [
+                    'name' => 'Site Manager',
+                    'password' => Hash::make('password'),
+                    'site_id' => $site->id,
+                ]
+            );
+            $manager->assignRole('Manager');
+        }
     }
 }

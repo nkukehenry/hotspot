@@ -3,15 +3,18 @@
 
 @section('content')
     <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Manage Users</h1>
+        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-users-cog mr-2 text-blue-500"></i>Manage Users</h1>
 
         <!-- Add User Button -->
+        @can('create_users')
         <button data-modal-target="add-user-modal" data-modal-toggle="add-user-modal"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
-            Add User
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 shadow-lg transition duration-200">
+            <i class="fas fa-user-plus mr-2"></i>Add User
         </button>
+        @endcan
 
-        <table class="min-w-full bg-white dark:bg-gray-800">
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white dark:bg-gray-800">
             <thead>
                 <tr class="bg-gray-200 dark:bg-gray-700">
                     <th class="py-2 text-gray-800 dark:text-gray-200">Name</th>
@@ -23,16 +26,20 @@
             <tbody>
                 @foreach ($users as $user)
                     <tr class="text-gray-700 dark:text-gray-300">
-                        <td class="py-2 px-2">{{ $user->name }}</td>
-                        <td class="py-2">{{ $user->email }}</td>
-                        <td class="py-2">{{ $user->roles->pluck('name')->join(', ') }}</td>
-                        <td class="py-2 text-center">
+                        <td class="py-2 px-2 whitespace-nowrap">{{ $user->name }}</td>
+                        <td class="py-2 whitespace-nowrap">{{ $user->email }}</td>
+                        <td class="py-2 whitespace-nowrap">{{ $user->roles->pluck('name')->join(', ') }}</td>
+                        <td class="py-2 text-center whitespace-nowrap">
+                            @can('edit_users')
                             <button data-modal-target="edit-modal-{{ $user->id }}"
                                 data-modal-toggle="edit-modal-{{ $user->id }}"
                                 class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">Edit</button>
+                            @endcan
+                            @can('delete_users')
                             <button data-modal-target="delete-modal-{{ $user->id }}"
                                 data-modal-toggle="delete-modal-{{ $user->id }}"
                                 class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Delete</button>
+                            @endcan
                         </td>
                     </tr>
 
@@ -126,7 +133,8 @@
                     </div>
                 @endforeach
             </tbody>
-        </table>
+            </table>
+        </div>
 
         <!-- Add User Modal -->
         <div id="add-user-modal" tabindex="-1" aria-hidden="true"
@@ -171,11 +179,30 @@
                                 <select id="role" name="role"
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
                                     required>
-                                    <option value="user">User</option>
-                                    <option value="admin">Admin</option>
-                                    <!-- Add more roles as necessary -->
+                                    @role('Owner')
+                                        <option value="Owner">Platform Owner</option>
+                                        <option value="Manager">Site Manager</option>
+                                    @endrole
+                                    @hasanyrole('Owner|Manager')
+                                        <option value="Supervisor">Site Supervisor</option>
+                                    @endhasanyrole
+                                    <option value="Agent">Sales Agent</option>
                                 </select>
                             </div>
+
+                            @role('Owner')
+                            <div class="mb-4">
+                                <label for="site_id"
+                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Site</label>
+                                <select id="site_id" name="site_id"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
+                                    <option value="">None (Platform Level)</option>
+                                    @foreach($sites as $site)
+                                        <option value="{{ $site->id }}">{{ $site->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endrole
                             <button type="submit"
                                 class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add
                                 User</button>

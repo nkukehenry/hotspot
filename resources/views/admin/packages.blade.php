@@ -3,26 +3,28 @@
 
 @section('content')
     <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Manage Packages</h1>
+        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-box-open mr-2 text-blue-500"></i>Manage Packages</h1>
 
 
 
         <!-- Add Package Button -->
+        @can('create_packages')
         <button data-modal-target="add-package-modal" data-modal-toggle="add-package-modal"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
-            Add Package
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 shadow-lg transition duration-200">
+            <i class="fas fa-plus mr-2"></i>Add Package
         </button>
+        @endcan
 
-        <!-- Filter by Location -->
+        <!-- Filter by Site -->
         <form method="GET" action="{{ route('admin.packages') }}" class="mb-4">
-            <label for="location_id" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Filter by
-                Location</label>
-            <select id="location_id" name="location_id"
+            <label for="site_id" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Filter by
+                Site</label>
+            <select id="site_id" name="site_id"
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                <option value="">All Locations</option>
-                @foreach ($locations as $location)
-                    <option value="{{ $location->id }}" {{ request('location_id') == $location->id ? 'selected' : '' }}>
-                        {{ $location->name }}
+                <option value="">All Sites</option>
+                @foreach ($sites as $site)
+                    <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>
+                        {{ $site->name }}
                     </option>
                 @endforeach
             </select>
@@ -31,30 +33,35 @@
             </button>
         </form>
 
-        <table class="min-w-full bg-white dark:bg-gray-800">
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white dark:bg-gray-800">
             <thead>
                 <tr class="bg-gray-200 dark:bg-gray-700">
                     <th class="py-2 text-gray-800 dark:text-gray-200">Name</th>
                     <th class="py-2 text-gray-800 dark:text-gray-200">Cost</th>
                     <th class="py-2 text-gray-800 dark:text-gray-200">Description</th>
-                    <th class="py-2 text-gray-800 dark:text-gray-200">Location</th>
+                    <th class="py-2 text-gray-800 dark:text-gray-200">Site</th>
                     <th class="py-2 text-gray-800 dark:text-gray-200">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($packages as $package)
                     <tr class="text-gray-700 dark:text-gray-300">
-                        <td class="py-2 px-2">{{ $package->name }}</td>
-                        <td class="py-2">UGX {{ number_format($package->cost) }}</td>
+                        <td class="py-2 px-2 whitespace-nowrap">{{ $package->name }}</td>
+                        <td class="py-2 whitespace-nowrap">UGX {{ number_format($package->cost) }}</td>
                         <td class="py-2">{{ $package->description }}</td>
-                        <td class="py-2">{{ $package->location->name }}</td>
-                        <td class="py-2">
+                        <td class="py-2 whitespace-nowrap">{{ $package->site->name ?? 'N/A' }}</td>
+                        <td class="py-2 whitespace-nowrap">
+                            @can('edit_packages')
                             <button data-modal-target="edit-modal-{{ $package->id }}"
                                 data-modal-toggle="edit-modal-{{ $package->id }}"
                                 class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">Edit</button>
+                            @endcan
+                            @can('delete_packages')
                             <button data-modal-target="delete-modal-{{ $package->id }}"
                                 data-modal-toggle="delete-modal-{{ $package->id }}"
                                 class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Delete</button>
+                            @endcan
                         </td>
                     </tr>
 
@@ -106,15 +113,15 @@
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">{{ $package->description }}</textarea>
                                         </div>
                                         <div class="mb-4">
-                                            <label for="location_id"
-                                                class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Location</label>
-                                            <select id="location_id" name="location_id"
+                                            <label for="site_id"
+                                                class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Site</label>
+                                            <select id="site_id" name="site_id"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
                                                 required>
-                                                @foreach ($locations as $location)
-                                                    <option value="{{ $location->id }}"
-                                                        {{ $package->location_id == $location->id ? 'selected' : '' }}>
-                                                        {{ $location->name }}
+                                                @foreach ($sites as $site)
+                                                    <option value="{{ $site->id }}"
+                                                        {{ $package->site_id == $site->id ? 'selected' : '' }}>
+                                                        {{ $site->name }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -170,7 +177,8 @@
                     </div>
                 @endforeach
             </tbody>
-        </table>
+            </table>
+        </div>
 
         <!-- Pagination Links -->
         {{ $packages->links() }}
@@ -219,13 +227,13 @@
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"></textarea>
                             </div>
                             <div class="mb-4">
-                                <label for="location_id"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Location</label>
-                                <select id="location_id" name="location_id"
+                                <label for="site_id"
+                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Site</label>
+                                <select id="site_id" name="site_id"
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
                                     required>
-                                    @foreach ($locations as $location)
-                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @foreach ($sites as $site)
+                                        <option value="{{ $site->id }}">{{ $site->name }}</option>
                                     @endforeach
                                 </select>
                             </div>

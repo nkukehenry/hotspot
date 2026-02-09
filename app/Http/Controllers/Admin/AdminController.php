@@ -11,26 +11,41 @@ use App\Imports\VouchersImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
-use App\Models\Location;
+use App\Models\Site;
 use App\Models\Voucher;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
+use App\Services\LedgerService;
 
 class AdminController extends Controller
 {
+    protected $ledgerService;
+
+    public function __construct(LedgerService $ledgerService)
+    {
+        $this->ledgerService = $ledgerService;
+    }
     public function dashboard()
     {
+        $user = Auth::user();
+
         // Fetch sales data for the dashboard
-        $salesData = DB::table('transactions')
+        $query = DB::table('transactions')
             ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
             ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-            ->join('locations', 'packages.location_id', '=', 'locations.id')
+            ->join('sites', 'packages.site_id', '=', 'sites.id')
             ->select(
                 'packages.name as package_name',
-                'locations.name as location_name',
+                'sites.name as site_name',
                 DB::raw('count(transactions.id) as sales_count'),
                 DB::raw('sum(packages.cost) as revenue')
-            )
-            ->groupBy('packages.id', 'packages.name', 'locations.id', 'locations.name')
+            );
+
+        if ($user->site_id) {
+             $query->where('sites.id', $user->site_id);
+        }
+
+        $salesData = $query->groupBy('packages.id', 'packages.name', 'sites.id', 'sites.name')
             ->get();
 
         return view('admin.dashboard', compact('salesData'));
@@ -38,109 +53,147 @@ class AdminController extends Controller
 
     public function showUsers()
     {
-        $users = User::with('roles')->paginate();
-        return view('admin.users', compact('users'));
+        if (!Auth::user()->can('view_users')) {
+            abort(403);
+        }
+
+        $user = Auth::user();
+        $query = User::with('roles');
+
+        if ($user->site_id) {
+            $query->where('site_id', $user->site_id);
+        }
+
+        $users = $query->paginate();
+        
+        $sites = [];
+        if ($user->hasRole('Owner')) {
+            $sites = Site::all();
+        }
+
+        return view('admin.users', compact('users', 'sites'));
     }
 
     public function editUser(User $user)
     {
+        if (!Auth::user()->can('edit_users')) {
+            abort(403);
+        }
         // Logic to edit user roles
     }
 
     public function deleteUser(User $user)
     {
+        if (!Auth::user()->can('delete_users')) {
+            abort(403);
+        }
+
+        // Hierarchy Check
+        if (Auth::user()->site_id && $user->site_id != Auth::user()->site_id) {
+             abort(403, 'Cannot delete user from another site.');
+        }
+
         $user->delete();
         return redirect()->route('admin.users')->with('success', 'User deleted successfully.');
     }
 
     public function showReports(Request $request)
     {
-        // Define a unique cache key based on the request parameters
-        $cacheKey = 'reports_data';
+        if (!Auth::user()->can('view_reports')) {
+            abort(403);
+        }
 
-        // Attempt to retrieve the cached data
-        $salesData = Cache::remember($cacheKey, 60 * 60, function () use ($request) {
-            // Initialize the query for sales data
-            $query = DB::table('transactions')
-                ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
-                ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-                ->join('locations', 'packages.location_id', '=', 'locations.id')
-                ->select(
-                    'packages.name as package_name',
-                    'packages.cost',
-                    'locations.name as location_name',
-                    DB::raw('count(transactions.id) as sales_count'),
-                    DB::raw('sum(packages.cost) as revenue')
-                );
+        $user = Auth::user();
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+        $siteId = $request->input('site_id');
+        $packageId = $request->input('package_id');
 
-            // Apply filters if provided
-            if ($request->filled('package_id')) {
-                $query->where('packages.id', $request->package_id);
-            }
+        // RBAC Scoping
+        if ($user->site_id) {
+            $siteId = $user->site_id;
+        }
 
-            if ($request->filled('location_id')) {
-                $query->where('locations.id', $request->location_id);
-            }
+        // Base query for summary and table
+        $query = DB::table('transactions')
+            ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
+            ->join('packages', 'vouchers.package_id', '=', 'packages.id')
+            ->join('sites', 'packages.site_id', '=', 'sites.id')
+            ->when($siteId, fn($q) => $q->where('sites.id', $siteId))
+            ->when($packageId, fn($q) => $q->where('packages.id', $packageId))
+            ->when($dateFrom, fn($q) => $q->whereDate('transactions.created_at', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('transactions.created_at', '<=', $dateTo));
 
-            // Group the results
-            return $query->groupBy('packages.id', 'packages.name', 'packages.cost', 'locations.id', 'locations.name')->get();
-        });
+        // Sales Data for Table
+        $salesData = (clone $query)
+            ->select(
+                'packages.name as package_name',
+                'packages.cost',
+                'sites.name as site_name',
+                DB::raw('count(transactions.id) as sales_count'),
+                DB::raw('sum(packages.cost) as revenue')
+            )
+            ->groupBy('packages.id', 'packages.name', 'packages.cost', 'sites.id', 'sites.name')
+            ->get();
 
-        // Prepare data for pie charts with the same filters applied
-        $packageRevenueData = Cache::remember('package_revenue_data' , 60 * 60, function () use ($request) {
-            $query = DB::table('transactions')
-                ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
-                ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-                ->join('locations', 'packages.location_id', '=', 'locations.id')
-                ->select('packages.name as package_name', DB::raw('sum(packages.cost) as total_revenue'));
+        // Summary Stats
+        $summary = [
+            'total_revenue' => $salesData->sum('revenue'),
+            'total_sales' => $salesData->sum('sales_count'),
+            'top_package' => $salesData->sortByDesc('sales_count')->first()?->package_name ?? 'N/A'
+        ];
 
-            // Apply filters if provided
-            if ($request->filled('package_id')) {
-                $query->where('packages.id', $request->package_id);
-            }
+        // Trend Data (Monthly)
+        $trendQuery = (clone $query)
+            ->select(
+                DB::raw("DATE_FORMAT(transactions.created_at, '%Y-%m') as month"),
+                DB::raw('sum(packages.cost) as monthly_revenue')
+            )
+            ->groupBy('month')
+            ->orderBy('month', 'ASC');
+        
+        $trendData = $trendQuery->get();
 
-            if ($request->filled('location_id')) {
-                $query->where('locations.id', $request->location_id);
-            }
+        // Pie Chart Data
+        $packageRevenueData = (clone $query)
+            ->select('packages.name as package_name', DB::raw('sum(packages.cost) as total_revenue'))
+            ->groupBy('packages.id', 'packages.name')
+            ->get();
 
-            return $query->groupBy('packages.id', 'packages.name')->get();
-        });
+        $siteRevenueData = (clone $query)
+            ->select('sites.name as site_name', DB::raw('sum(packages.cost) as total_revenue'))
+            ->groupBy('sites.id', 'sites.name')
+            ->get();
 
-        $locationRevenueData = Cache::remember('location_revenue_data' , 60 * 60, function () use ($request) {
-            $query = DB::table('transactions')
-                ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
-                ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-                ->join('locations', 'packages.location_id', '=', 'locations.id')
-                ->select('locations.name as location_name', DB::raw('sum(packages.cost) as total_revenue'));
+        // Dropdowns
+        $packages = $user->site_id ? Package::where('site_id', $user->site_id)->get() : Package::all();
+        $sites = $user->site_id ? Site::where('id', $user->site_id)->get() : Site::all();
 
-            // Apply filters if provided
-            if ($request->filled('package_id')) {
-                $query->where('packages.id', $request->package_id);
-            }
-
-            if ($request->filled('location_id')) {
-                $query->where('locations.id', $request->location_id);
-            }
-
-            return $query->groupBy('locations.id', 'locations.name')->get();
-        });
-
-        // Fetch all packages and locations for the filter dropdowns
-        $packages = Package::all();
-        $locations = Location::all();
-
-        // Return the view with the data
-        return view('admin.reports', compact('salesData', 'packages', 'locations', 'packageRevenueData', 'locationRevenueData'));
+        return view('admin.reports', compact(
+            'salesData',
+            'packages',
+            'sites',
+            'packageRevenueData',
+            'siteRevenueData',
+            'summary',
+            'trendData'
+        ));
     }
 
     public function showSettings()
     {
+        if (!Auth::user()->can('manage_settings')) {
+             abort(403);
+        }
         $settings = SystemSetting::first();
         return view('admin.settings', compact('settings'));
     }
 
     public function updateSettings(Request $request)
     {
+        if (!Auth::user()->can('manage_settings')) {
+             abort(403);
+        }
         $settings = SystemSetting::first();
         $settings->update($request->all());
         return redirect()->route('admin.settings')->with('success', 'Settings updated successfully.');
@@ -148,68 +201,56 @@ class AdminController extends Controller
 
     public function showUploadVouchers()
     {
+        if (!Auth::user()->can('create_vouchers')) {
+             abort(403);
+        }
         $packages = Package::paginate(10);
         return view('admin.upload_vouchers', compact('packages'));
     }
 
     public function uploadVouchers(Request $request)
     {
+        if (!Auth::user()->can('create_vouchers')) {
+             abort(403);
+        }
+
         $request->validate([
             'package_id' => 'required|exists:packages,id',
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         $packageId = $request->package_id;
+        
+        // Scope check
+        if (Auth::user()->site_id) {
+            $package = Package::find($packageId);
+            if ($package->site_id != Auth::user()->site_id) {
+                abort(403, 'Cannot upload vouchers for another site package.');
+            }
+        }
 
         Excel::import(new VouchersImport($packageId), $request->file('file'));
 
         return redirect()->route('admin.vouchers')->with('success', 'Vouchers uploaded successfully.');
     }
 
-    public function showLocations()
-    {
-        $locations = Location::paginate(10);
-        return view('admin.locations', compact('locations'));
-    }
-
-    public function createLocation(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-        ]);
-
-        Location::create($request->only(['name', 'address']));
-
-        return redirect()->route('admin.locations')->with('success', 'Location created successfully.');
-    }
-
-    public function updateLocation(Request $request, Location $location)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-        ]);
-
-        $location->update($request->only(['name', 'address']));
-
-        return redirect()->route('admin.locations')->with('success', 'Location updated successfully.');
-    }
-
-    public function deleteLocation(Location $location)
-    {
-        $location->delete();
-        return redirect()->route('admin.locations')->with('success', 'Location deleted successfully.');
-    }
-
     public function createPackage(Request $request)
     {
+        if (!Auth::user()->can('create_packages')) {
+            abort(403);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'cost' => 'required|numeric|min:0',
             'description' => 'required|string',
-            'location_id' => 'required|exists:locations,id',
+            'site_id' => 'required|exists:sites,id',
         ]);
+
+        // Scoping check for non-Owners
+        if (Auth::user()->site_id && $request->site_id != Auth::user()->site_id) {
+             abort(403, 'Cannot create package for another site.');
+        }
 
         Package::create($request->all());
         return redirect()->route('admin.packages')->with('success', 'Package created successfully.');
@@ -218,84 +259,272 @@ class AdminController extends Controller
     
     public function updatePackage(Request $request, Package $package)
     {
+        if (!Auth::user()->can('edit_packages')) {
+            abort(403);
+        }
+
+        // Scoping check
+        if (Auth::user()->site_id && $package->site_id != Auth::user()->site_id) {
+             abort(403);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'cost' => 'required|numeric|min:0',
             'description' => 'required|string',
-            'location_id' => 'required|exists:locations,id',
+            'site_id' => 'required|exists:sites,id',
         ]);
+
+        if (Auth::user()->site_id && $request->site_id != Auth::user()->site_id) {
+             abort(403);
+        }
 
         $package->update($request->all());
         return redirect()->route('admin.packages')->with('success', 'Package updated successfully.');
     }
 
 
+    public function getPackagesBySite($siteId)
+    {
+        $user = Auth::user();
+        if ($user->site_id && $user->site_id != $siteId) {
+            abort(403);
+        }
+        $packages = Package::where('site_id', $siteId)->get();
+        return response()->json($packages);
+    }
+
+    public function bulkAction(Request $request)
+    {
+        // Permission check depends on action, assuming delete mostly
+        if (!Auth::user()->can('delete_vouchers') && !Auth::user()->can('edit_vouchers')) {
+             abort(403);
+        }
+
+        $voucherIds = $request->input('voucher_ids', []);
+        $status = $request->input('status');
+
+        if ($request->isMethod('post') && !empty($voucherIds)) {
+            // Scope check: Ensure all vouchers belong to user's site
+            if (Auth::user()->site_id) {
+                $count = DB::table('vouchers')
+                    ->join('packages', 'vouchers.package_id', '=', 'packages.id')
+                    ->whereIn('vouchers.id', $voucherIds)
+                    ->where('packages.site_id', Auth::user()->site_id)
+                    ->count();
+                
+                if ($count != count($voucherIds)) {
+                    abort(403, 'Unauthorized access to some vouchers.');
+                }
+            }
+
+            if ($status) {
+                // Change status
+                 if (!Auth::user()->can('edit_vouchers')) abort(403);
+                Voucher::whereIn('id', $voucherIds)->update(['is_used' => $status === 'used']);
+            } else {
+                // Delete vouchers
+                 if (!Auth::user()->can('delete_vouchers')) abort(403);
+                Voucher::destroy($voucherIds);
+            }
+            return redirect()->back()->with('success', 'Bulk action completed.');
+        }
+        return redirect()->back()->with('error', 'No vouchers selected.');
+    }
+
     public function showPackages(Request $request)
     {
-        $locations = Location::all();
-        $locationId = $request->input('location_id');
+        if (!Auth::user()->can('view_packages')) {
+            abort(403);
+        }
 
-        // Query packages, applying the location filter if provided
-        $packages = Package::when($locationId, function ($query, $locationId) {
-            return $query->where('location_id', $locationId);
+        $user = Auth::user();
+        if ($user->site_id) {
+             $sites = Site::where('id', $user->site_id)->get();
+        } else {
+             $sites = Site::all();
+        }
+
+        $siteId = $request->input('site_id');
+
+        // RBAC Override
+        if ($user->site_id) {
+            $siteId = $user->site_id;
+        }
+
+        // Query packages, applying the site filter if provided
+        $packages = Package::when($siteId, function ($query, $siteId) {
+            return $query->where('site_id', $siteId);
         })->paginate(10);
 
-        return view('admin.packages', compact('packages', 'locations'));
+        return view('admin.packages', compact('packages', 'sites'));
     }
 
     public function deletePackage(Package $package)
     {
+        if (!Auth::user()->can('delete_packages')) {
+            abort(403);
+        }
+         // Scoping check
+        if (Auth::user()->site_id && $package->site_id != Auth::user()->site_id) {
+             abort(403);
+        }
+
         $package->delete();
         return redirect()->route('admin.packages')->with('success', 'Package deleted successfully.');
     }
 
     public function showVouchers(Request $request)
     {
-        $locations = Location::all();
-        $packages = Package::all();
+        $user = Auth::user();
+        if ($user->site_id) {
+             $sites = Site::where('id', $user->site_id)->get();
+             $packages = Package::where('site_id', $user->site_id)->get();
+        } else {
+             $sites = Site::all();
+             $packages = Package::all();
+        }
 
         $vouchers = DB::table('vouchers')
             ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-            ->join('locations', 'packages.location_id', '=', 'locations.id')
+            ->join('sites', 'packages.site_id', '=', 'sites.id')
             ->select(
                 'vouchers.*',
                 'packages.name as package_name',
                 'packages.cost',
-                'locations.name as location_name'
+                'sites.name as site_name'
             )
-            ->when($request->location_id, function ($query, $locationId) {
-                return $query->where('packages.location_id', $locationId);
+            ->when($request->site_id, function ($query, $siteId) {
+                return $query->where('packages.site_id', $siteId);
             })
             ->when($request->package_id, function ($query, $packageId) {
                 return $query->where('vouchers.package_id', $packageId);
             })
+            ->when($user->site_id, function ($query, $siteId) {
+                 return $query->where('packages.site_id', $siteId);
+            })
             ->paginate(10);
 
-        return view('admin.vouchers', compact('vouchers', 'locations', 'packages'));
+        return view('admin.vouchers', compact('vouchers', 'sites', 'packages'));
     }
-
-public function getPackagesByLocation($locationId)
-{
-    $packages = Package::where('location_id', $locationId)->get();
-    return response()->json($packages);
-}
-
-public function bulkAction(Request $request)
-{
-    $voucherIds = $request->input('voucher_ids', []);
-    $status = $request->input('status');
-
-    if ($request->isMethod('post') && !empty($voucherIds)) {
-        if ($status) {
-            // Change status
-            Voucher::whereIn('id', $voucherIds)->update(['is_used' => $status === 'used']);
-        } else {
-            // Delete vouchers
-            Voucher::destroy($voucherIds);
+    public function showTransactions(Request $request)
+    {
+        if (!Auth::user()->can('view_transactions')) {
+             abort(403);
         }
+
+        $user = Auth::user();
+        if ($user->site_id) {
+             $sites = Site::where('id', $user->site_id)->get();
+             $packages = Package::where('site_id', $user->site_id)->get();
+        } else {
+             $sites = Site::all();
+             $packages = Package::all();
+        }
+
+        $query = Transaction::with(['site', 'voucher.package']);
+
+        // Apply Filters
+        if ($request->filled('site_id')) {
+            $query->where('site_id', $request->site_id);
+        }
+
+        if ($request->filled('package_id')) {
+            $query->whereHas('voucher', function ($q) use ($request) {
+                $q->where('package_id', $request->package_id);
+            });
+        }
+
+        if ($request->filled('mobile_number')) {
+            $query->where('mobile_number', 'like', '%' . $request->mobile_number . '%');
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // RBAC Scope
+        if ($user->site_id) {
+            $query->where('site_id', $user->site_id);
+        }
+
+        if ($user->hasRole('Agent')) {
+            $query->where('agent_id', $user->id);
+        }
+
+        $transactions = $query->latest()->paginate(20);
+
+        return view('admin.transactions', compact('transactions', 'sites', 'packages'));
     }
 
-    return redirect()->route('admin.vouchers')->with('success', 'Action completed successfully.');
-}
+    public function showReconciliation()
+    {
+        if (!Auth::user()->can('view_reports')) { // Reuse view_reports or create specific permission
+             abort(403);
+        }
 
+        $siteId = Auth::user()->site_id;
+        
+        // Find all agents for this site
+        $agents = User::role('Agent')
+            ->where('site_id', $siteId)
+            ->get()
+            ->map(function($agent) {
+                $account = Account::where('code', 'AGENT_CASH_' . $agent->id)->first();
+                $agent->cash_balance = $account ? $account->balance : 0;
+                return $agent;
+            });
+
+        return view('admin.reconciliation', compact('agents'));
+    }
+
+    public function reconcileCash(Request $request)
+    {
+        if (!Auth::user()->can('manage_settings')) { // Reuse for now
+             abort(403);
+        }
+
+        $request->validate([
+            'agent_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:0.01'
+        ]);
+
+        $supervisor = Auth::user();
+        $agent = User::findOrFail($request->agent_id);
+        $amount = $request->amount;
+
+        return DB::transaction(function () use ($agent, $supervisor, $amount) {
+            $agentAccount = Account::where('code', 'AGENT_CASH_' . $agent->id)->first();
+            
+            if (!$agentAccount || $agentAccount->balance < $amount) {
+                return back()->with('error', 'Insufficient agent balance.');
+            }
+
+            // Site Cash Account
+            $siteCashCode = 'SITE_CASH_' . $supervisor->site_id;
+            $siteCashAccount = Account::where('code', $siteCashCode)->first();
+
+            if (!$siteCashAccount) {
+                $siteCashAccount = Account::create([
+                    'name' => 'Site Cash: ' . $supervisor->site->name,
+                    'code' => $siteCashCode,
+                    'type' => 'asset',
+                    'site_id' => $supervisor->site_id,
+                    'balance' => 0
+                ]);
+            }
+
+            // Record Transfer in Ledger
+            // DR Site Cash, CR Agent Cash
+            $description = "Cash Reconciliation: {$agent->name} -> {$supervisor->name}";
+            $this->ledgerService->addEntry($siteCashAccount, $amount, 0, $description);
+            $this->ledgerService->addEntry($agentAccount, 0, $amount, $description);
+
+            return back()->with('success', "Successfully reconciled " . number_format($amount) . " from {$agent->name}.");
+        });
+    }
 }
