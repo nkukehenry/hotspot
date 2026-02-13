@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ $settings?->system_name ?? config('app.name', 'Neonet') }} - Login</title>
+    <meta name="description" content="Login to {{ $settings?->system_name ?? config('app.name', 'Neonet') }} portal.">
+    <link rel="icon" type="image/png" href="{{ (isset($settings) && $settings->logo) ? asset('storage/' . $settings->logo) : asset('images/logo.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

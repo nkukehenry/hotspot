@@ -5,7 +5,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Neonet') }} - Admin</title>
+    <title>{{ $settings?->system_name ?? config('app.name', 'Neonet') }} - Admin</title>
+    <meta name="description" content="Admin Dashboard for {{ $settings?->system_name ?? config('app.name', 'Neonet') }}">
+    <link rel="icon" type="image/png" href="{{ (isset($settings) && $settings->logo) ? asset('storage/' . $settings->logo) : asset('images/logo.png') }}">
     <!-- Include Tailwind CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,10 +35,17 @@
                             </path>
                         </svg>
                     </button>
-                    <a href="{{ route('admin.dashboard') }}" class="flex ms-2 md:me-24">
-                        <img src="https://flowbite.com/docs/images/logo.svg" class="h-8 me-3" alt="FlowBite Logo" />
-                        <span
-                            class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">{{ config('app.name', 'Neonet') }}</span>
+                    <a href="{{ Auth::user()->hasRole('Agent') ? route('agent.dashboard') : route('admin.dashboard') }}" class="flex ms-2 md:me-24">
+                        @if(Auth::user()->site && Auth::user()->site->logo)
+                            <img src="{{ asset('storage/' . Auth::user()->site->logo) }}" class="h-8 me-3" alt="{{ Auth::user()->site->name }}">
+                            <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">{{ Auth::user()->site->name }}</span>
+                        @elseif(isset($settings) && $settings->logo)
+                            <img src="{{ asset('storage/' . $settings->logo) }}" class="h-8 me-3" alt="{{ $settings->system_name }}">
+                            <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">{{ $settings->system_name }}</span>
+                        @else
+                            <img src="https://flowbite.com/docs/images/logo.svg" class="h-8 me-3" alt="FlowBite Logo" />
+                            <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">{{ config('app.name', 'Neonet') }}</span>
+                        @endif
                     </a>
                 </div>
                 <div class="flex items-center">
@@ -63,7 +72,7 @@
                             </div>
                             <ul class="py-1" role="none">
                                 <li>
-                                    <a href="{{ route('admin.dashboard') }}"
+                                    <a href="{{ Auth::user()->hasRole('Agent') ? route('agent.dashboard') : route('admin.dashboard') }}"
                                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                                         role="menuitem">Dashboard</a>
                                 </li>
@@ -98,13 +107,24 @@
         <div class="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
             <ul class="space-y-2 font-medium">
                 <li>
-                    <a href="{{ route('admin.dashboard') }}"
-                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.dashboard') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                    <a href="{{ Auth::user()->hasRole('Agent') ? route('agent.dashboard') : route('admin.dashboard') }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.dashboard') || request()->routeIs('agent.dashboard') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
                         <i
-                            class="icon-home w-5 h-5 transition duration-75 {{ request()->routeIs('admin.dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
-                        <span class="ms-3 {{ request()->routeIs('admin.dashboard') ? 'font-bold' : '' }}">Dashboard</span>
+                            class="icon-home w-5 h-5 transition duration-75 {{ request()->routeIs('admin.dashboard') || request()->routeIs('agent.dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="ms-3 {{ request()->routeIs('admin.dashboard') || request()->routeIs('agent.dashboard') ? 'font-bold' : '' }}">Dashboard</span>
                     </a>
                 </li>
+
+                @role('Agent')
+                <li>
+                    <a href="{{ route('admin.transactions') }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.transactions') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <i
+                            class="icon-list w-5 h-5 transition duration-75 {{ request()->routeIs('admin.transactions') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.transactions') ? 'font-bold' : '' }}">My Sales</span>
+                    </a>
+                </li>
+                @endrole
 
                 @canany(['manage_sites', 'view_sites','create_sites','edit_sites','delete_sites'])
                 <li>
@@ -115,7 +135,7 @@
                         <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.sites*') ? 'font-bold' : '' }}">Sites</span>
                     </a>
                 </li>
-                @endcan
+                @endcanany
                 @can('view_packages')
                 <li>
                     <a href="{{ route('admin.packages') }}"
@@ -203,8 +223,8 @@
         </div>
     </aside>
 
-    <div class="p-4 sm:ml-64">
-        <div class="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 mt-14">
+    <div class="px-4 sm:ml-64">
+        <div class="py-4 mt-14">
             @yield('content')
         </div>
     </div>

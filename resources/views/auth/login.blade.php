@@ -1,8 +1,12 @@
 <x-guest-layout>
     <!-- Logo -->
     <div class="flex flex-col items-center mb-6">
-        <h3 class="text-2xl font-bold mb-2">NeoNet Admin</h3>
-        <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-10 h-10" width="25%">
+        <h3 class="text-2xl font-bold mb-2">{{ $settings->system_name ?? 'NeoNet Admin' }}</h3>
+        @if(isset($settings) && $settings->logo)
+            <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->system_name }}" class="h-16 w-auto object-contain">
+        @else
+            <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-10 h-10" width="25%">
+        @endif
     </div>
 
     <!-- Session Status -->

@@ -1,11 +1,11 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container mx-auto mt-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $site->name }}</h1>
-            <a href="{{ route('admin.sites') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                Back to Sites
+    <div class="container mx-auto mt-4 px-4">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ $site->name }}</h1>
+            <a href="{{ route('admin.sites') }}" class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-bold py-1.5 px-3 rounded-lg text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
         </div>
 
@@ -29,6 +29,9 @@
                 <li role="presentation">
                     <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="ledger-tab" data-tabs-target="#ledger" type="button" role="tab" aria-controls="ledger" aria-selected="false"><i class="fas fa-file-invoice-dollar mr-2"></i>Settlements & Ledger</button>
                 </li>
+                <li role="presentation">
+                    <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="fees-tab" data-tabs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="false"><i class="fas fa-percent mr-2"></i>Fees</button>
+                </li>
             </ul>
         </div>
 
@@ -36,28 +39,28 @@
             <!-- Overview Tab -->
             <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="overview" role="tabpanel" aria-labelledby="overview-tab">
                 <!-- Site Info Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Revenue</h3>
-                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Revenue</h3>
+                        <p class="text-xl font-mono font-bold text-green-600 dark:text-green-400">
                             {{ number_format(($site->cash_sales_balance ?? 0) + ($site->digital_sales_balance ?? 0), 2) }}
                         </p>
                     </div>
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Cash Balance</h3>
-                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Cash Balance</h3>
+                        <p class="text-xl font-mono font-bold text-green-600 dark:text-green-400">
                             {{ number_format($site->cash_sales_balance ?? 0, 2) }}
                         </p>
                     </div>
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Digital Balance</h3>
-                        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <div class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Digital Balance</h3>
+                        <p class="text-xl font-mono font-bold text-blue-600 dark:text-blue-400">
                             {{ number_format($site->digital_sales_balance ?? 0, 2) }}
                         </p>
                     </div>
-                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Site Code</h3>
-                        <p class="text-xl font-mono text-gray-900 dark:text-white">{{ $site->site_code }}</p>
+                    <div class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Site Code</h3>
+                        <p class="text-xl font-mono font-bold text-gray-900 dark:text-white">{{ $site->site_code }}</p>
                     </div>
                 </div>
 
@@ -97,11 +100,28 @@
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow mb-8">
-                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Details</h3>
-                     <p class="text-gray-600 dark:text-gray-400"><strong>Address:</strong> {{ $site->address }}</p>
-                     <p class="text-gray-600 dark:text-gray-400"><strong>Slug:</strong> {{ $site->slug }}</p>
-                     <p class="text-gray-600 dark:text-gray-400"><strong>Status:</strong> {{ $site->status ?? 'Active' }}</p>
+                <div class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm mb-6">
+                     <h3 class="text-xs font-black text-gray-900 dark:text-white uppercase mb-4 border-b pb-2 dark:border-gray-600">Company Details</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                         <div>
+                             <p class="text-gray-500 uppercase text-[9px] font-black">Address</p>
+                             <p class="text-gray-900 dark:text-white font-medium">{{ $site->address }}</p>
+                         </div>
+                         <div>
+                             <p class="text-gray-500 uppercase text-[9px] font-black">Contact Email</p>
+                             <p class="text-gray-900 dark:text-white font-medium">{{ $site->contact_email ?? 'N/A' }}</p>
+                         </div>
+                         <div>
+                             <p class="text-gray-500 uppercase text-[9px] font-black">Contact Phone</p>
+                             <p class="text-gray-900 dark:text-white font-medium">{{ $site->contact_phone ?? 'N/A' }}</p>
+                         </div>
+                         <div>
+                             <p class="text-gray-500 uppercase text-[9px] font-black">Status</p>
+                             <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                 {{ $site->status ?? 'Active' }}
+                             </span>
+                         </div>
+                     </div>
                 </div>
             </div>
 
@@ -308,23 +328,6 @@
                             </div>
                         </div>
 
-                        <!-- Fee Config Summary -->
-                        <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow">
-                            <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase mb-4 border-b pb-2 dark:border-gray-600">Fee Configuration</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-[10px] text-gray-500 uppercase">Customer Fee</p>
-                                    <p class="text-sm font-bold text-gray-900 dark:text-white">
-                                        {{ number_format($site->customer_fee_fixed) }} + {{ $site->customer_fee_percent }}%
-                                    </p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-gray-500 uppercase">Site Fee</p>
-                                    <p class="text-sm font-bold text-gray-900 dark:text-white">
-                                        {{ number_format($site->site_fee_fixed) }} + {{ $site->site_fee_percent }}%
-                                    </p>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -367,6 +370,51 @@
                             </div>
                             <div class="p-3 border-t dark:border-gray-600 text-center">
                                 <a href="#" class="text-[10px] text-blue-600 hover:underline dark:text-blue-400 font-bold uppercase tracking-wider">Download Statement (PDF)</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fees Tab -->
+            <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="fees" role="tabpanel" aria-labelledby="fees-tab">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                        <div class="flex items-center mb-3">
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg mr-3">
+                                <i class="fas fa-user-tag"></i>
+                            </div>
+                            <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase">Customer Fee</h4>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mb-4">Added to voucher price at checkout.</p>
+                        <div class="flex justify-between items-end border-t dark:border-gray-600 pt-3">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase">Fixed Amount</p>
+                                <p class="text-xl font-black text-gray-900 dark:text-white">{{ number_format($site->customer_fee_fixed, 2) }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] font-black text-gray-400 uppercase">Percentage</p>
+                                <p class="text-xl font-black text-blue-600">{{ $site->customer_fee_percent }}%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                        <div class="flex items-center mb-3">
+                            <div class="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg mr-3">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase">Site Fee</h4>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mb-4">Deducted from site balance per sale.</p>
+                        <div class="flex justify-between items-end border-t dark:border-gray-600 pt-3">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase">Fixed Fee</p>
+                                <p class="text-xl font-black text-gray-900 dark:text-white">{{ number_format($site->site_fee_fixed, 2) }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] font-black text-gray-400 uppercase">Percentage</p>
+                                <p class="text-xl font-black text-green-600">{{ $site->site_fee_percent }}%</p>
                             </div>
                         </div>
                     </div>

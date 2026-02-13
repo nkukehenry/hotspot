@@ -11,6 +11,8 @@ use App\Services\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\SendSmsJob;
+use App\Jobs\SendWhatsAppJob;
 
 class AgentController extends Controller
 {
@@ -40,7 +42,8 @@ class AgentController extends Controller
 
         $packages = Package::where('site_id', $site->id)->get();
         
-        $recentSales = Transaction::where('agent_id', $agent->id)
+        $recentSales = Transaction::with('package')
+            ->where('agent_id', $agent->id)
             ->latest()
             ->take(5)
             ->get();
@@ -98,6 +101,16 @@ class AgentController extends Controller
             // Note: For Agent sales, since it's cash, we may need a separate "Distribute Fees" logic 
             // if fees are deducted from the agent. For now, we'll follow general distribution.
             $this->feeService->distributeFees($transaction);
+
+            // Send notification if mobile number is provided
+            if($request->mobile_number) {
+                // Dispatch SMS
+                SendSmsJob::dispatch($request->mobile_number, $voucher->code);
+
+                // Dispatch WhatsApp
+                $whatsappMessage = "Your Wifi Voucher Code is: " . $voucher->code;
+                SendWhatsAppJob::dispatch($request->mobile_number, $whatsappMessage);
+            }
 
             return back()->with('success', 'Voucher sold successfully!')
                 ->with('voucher_code', $voucher->code);

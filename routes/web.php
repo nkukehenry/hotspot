@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SiteController;
 use App\Services\SMSService;
 use Illuminate\Support\Facades\Route;
+use App\Jobs\SendWhatsAppJob;
 
 
 Route::get('/dashboard', function () {
@@ -30,7 +31,7 @@ Route::get('/voucher/{transaction}', [CustomerController::class, 'showVoucher'])
 Route::get('/transactions', [CustomerController::class, 'showTransactions'])->name('customer.transactions');
 Route::any('/jpesa/callback',[CustomerController::class, 'handleCallback']);
 
-Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor'], 'prefix' => 'admin'], function () {
+Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent'], 'prefix' => 'admin'], function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     // Site Management - Only Owner can manage sites
@@ -49,12 +50,11 @@ Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor'], 'prefix
     Route::put('/packages/{package}', [AdminController::class, 'updatePackage'])->name('admin.updatePackage');
     Route::delete('/packages/{package}', [AdminController::class, 'deletePackage'])->name('admin.deletePackage');
     
-    // User Management - Owner and Manager can manage users (Supervisor generally can too, but maybe restricted)
-    // For now allowing all admin-types but will refine later
-    Route::get('/users', [AdminController::class, 'showUsers'])->name('admin.users');
-    Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('admin.updateUser');
-    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.deleteUser');
+    // User Management
+    Route::get('/users', [UserController::class, 'index'])->name('admin.users');
     Route::post('/users', [UserController::class, 'store'])->name('admin.addUser');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.updateUser');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.deleteUser');
 
     Route::get('/reports', [AdminController::class, 'showReports'])->name('admin.reports');
     Route::get('/transactions', [AdminController::class, 'showTransactions'])->name('admin.transactions'); // Added transactions route
@@ -85,7 +85,11 @@ Route::middleware(['auth', 'role:Agent'])->prefix('agent')->group(function () {
 });
 
 Route::get('/test',function(SMSService $sMSService){
-    $sMSService->sendVoucher("256777245670","98878878787");
+    $sMSService->sendVoucher("256777245670","988878787");
+    // This returns immediately, processing happens in background
+   SendWhatsAppJob::dispatch('256777245670', 'Hello from Neonet!');
 });
+
+
 
 require __DIR__ . '/auth.php';

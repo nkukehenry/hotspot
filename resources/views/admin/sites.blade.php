@@ -2,37 +2,59 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-location-dot mr-2 text-blue-500"></i>Manage Sites</h1>
+    <div class="container mx-auto mt-4 px-4">
+        <h1 class="text-xl font-black mb-4 text-gray-900 dark:text-white uppercase tracking-tight">
+            <i class="fas fa-location-dot mr-2 text-blue-500"></i> Manage Sites
+        </h1>
+
+        @if ($errors->any())
+            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                <ul class="mt-1.5 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <!-- Add Site Button -->
         @can('create_sites')
         <button data-modal-target="add-site-modal" data-modal-toggle="add-site-modal"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 shadow-lg transition duration-200">
-            <i class="fas fa-plus mr-2"></i>Add Site
+            class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-lg mb-4 shadow-sm transition">
+            <i class="fas fa-plus mr-2"></i> Add Site
         </button>
         @endcan
 
-        <div class="px-2 py-3 bg-white dark:bg-gray-800">
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
             <div class="overflow-x-auto">
-                <table class="min-w-full bg-white dark:bg-gray-800">
+                <table class="min-w-full">
                 <thead>
-                    <tr class="bg-gray-200 dark:bg-gray-700 text-sm uppercase leading-normal">
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">Name</th>
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">Cash Balance</th>
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">Digital Balance</th>
-                        <th class="py-2 px-3 text-center text-gray-800 dark:text-gray-200">Actions</th>
+                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                        <th class="py-2 px-3 text-left">Logo</th>
+                        <th class="py-2 px-3 text-left">Name</th>
+                        <th class="py-2 px-3 text-left">Cash Balance</th>
+                        <th class="py-2 px-3 text-left">Digital Balance</th>
+                        <th class="py-2 px-3 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-600 dark:text-gray-300 text-sm font-light">
                     @foreach ($sites as $site)
-                        <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 even:bg-gray-50 dark:even:bg-gray-800 transition-colors duration-200">
-                            <td class="py-1 px-3 text-left whitespace-nowrap font-medium">{{ $site->name }}</td>
-                            <td class="py-1 px-3 text-left font-mono text-green-600 dark:text-green-400">
-                                {{ number_format($site->cash_sales_balance ?? 0, 2) }}
+                        <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                            <td class="py-1 px-3 text-left whitespace-nowrap">
+                                @if($site->logo)
+                                    <img src="{{ asset('storage/' . $site->logo) }}" alt="{{ $site->name }}" class="h-8 w-8 object-contain rounded-full border border-gray-200 dark:border-gray-600">
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-500 text-xs">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                @endif
                             </td>
-                            <td class="py-1 px-3 text-left font-mono text-blue-600 dark:text-blue-400">
-                                {{ number_format($site->digital_sales_balance ?? 0, 2) }}
+                            <td class="py-2 px-3 text-left whitespace-nowrap font-bold text-xs text-gray-900 dark:text-white">{{ $site->name }}</td>
+                            <td class="py-2 px-3 text-left text-xs font-black text-green-600 dark:text-green-400 whitespace-nowrap">
+                                <span class="text-[9px] opacity-70">UGX</span> {{ number_format($site->cash_sales_balance ?? 0) }}
+                            </td>
+                            <td class="py-2 px-3 text-left text-xs font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                                <span class="text-[9px] opacity-70">UGX</span> {{ number_format($site->digital_sales_balance ?? 0) }}
                             </td>
                             <td class="py-1 px-3 text-center">
                                 <button id="dropdownMenuIconButton-{{ $site->id }}" data-dropdown-toggle="dropdownDots-{{ $site->id }}" class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-900 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none dark:text-white focus:ring-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-600" type="button">
@@ -114,49 +136,73 @@
                                             <span class="sr-only">Close modal</span>
                                         </button>
                                     </div>
-                                    <div class="p-4 md:p-5 space-y-4">
-                                        <form action="{{ route('admin.updateSite', $site->id) }}" method="POST">
+                                    <div class="p-4 space-y-3">
+                                        <form action="{{ route('admin.updateSite', $site->id) }}" method="POST" enctype="multipart/form-data">
                                             @csrf
                                             @method('PUT')
-                                            <div class="mb-4">
-                                                <label for="name"
-                                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Name</label>
-                                                <input type="text" id="name" name="name"
-                                                    value="{{ $site->name }}"
-                                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                                    required>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label for="edit_name_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Name</label>
+                                                    <input type="text" id="edit_name_{{ $site->id }}" name="name" value="{{ $site->name }}"
+                                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                                </div>
+                                                <div>
+                                                    <label for="edit_address_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Address</label>
+                                                    <input type="text" id="edit_address_{{ $site->id }}" name="address" value="{{ $site->address }}"
+                                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                </div>
+                                                <div>
+                                                    <label for="edit_contact_email_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Contact Email</label>
+                                                    <input type="email" id="edit_contact_email_{{ $site->id }}" name="contact_email" value="{{ $site->contact_email }}"
+                                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                </div>
+                                                <div>
+                                                    <label for="edit_contact_phone_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Contact Phone</label>
+                                                    <input type="text" id="edit_contact_phone_{{ $site->id }}" name="contact_phone" value="{{ $site->contact_phone }}"
+                                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                </div>
                                             </div>
-                                            <div class="mb-4">
-                                                <label for="address"
-                                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Address</label>
-                                                <input type="text" id="address" name="address"
-                                                    value="{{ $site->address }}"
-                                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
+
+                                            @error('logo')
+                                                <p class="mt-1 text-xs text-red-600 dark:text-red-400 font-bold">{{ $message }}</p>
+                                            @enderror
+
+                                            <div class="mt-3">
+                                                <label for="edit_logo_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site Logo</label>
+                                                <div class="flex items-center gap-3">
+                                                    @if($site->logo)
+                                                        <img src="{{ asset('storage/' . $site->logo) }}" alt="Current Logo" class="h-8 w-8 object-contain rounded border dark:border-gray-600">
+                                                    @endif
+                                                    <input type="file" id="edit_logo_{{ $site->id }}" name="logo" class="block w-full text-[10px] text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                                </div>
                                             </div>
                                             
-                                            <div class="grid grid-cols-2 gap-4 mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                                <div class="col-span-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">Fee Configuration</div>
-                                                <div>
-                                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Customer Fee (Fixed)</label>
-                                                    <input type="number" step="0.01" name="customer_fee_fixed" value="{{ $site->customer_fee_fixed }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Customer Fee (%)</label>
-                                                    <input type="number" step="0.01" name="customer_fee_percent" value="{{ $site->customer_fee_percent }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Site Fee (Fixed)</label>
-                                                    <input type="number" step="0.01" name="site_fee_fixed" value="{{ $site->site_fee_fixed }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Site Fee (%)</label>
-                                                    <input type="number" step="0.01" name="site_fee_percent" value="{{ $site->site_fee_percent }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
+                                            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
+                                                <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fee Configuration</div>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (Fixed)</label>
+                                                        <input type="number" step="1" name="customer_fee_fixed" value="{{ $site->customer_fee_fixed }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (%)</label>
+                                                        <input type="number" step="0.01" name="customer_fee_percent" value="{{ $site->customer_fee_percent }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (Fixed)</label>
+                                                        <input type="number" step="1" name="site_fee_fixed" value="{{ $site->site_fee_fixed }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (%)</label>
+                                                        <input type="number" step="0.01" name="site_fee_percent" value="{{ $site->site_fee_percent }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <button type="submit"
-                                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Save
-                                                Changes</button>
+                                                class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
+                                                Update Site
+                                            </button>
                                         </form>
                                     </div>
                                 </div>
@@ -231,47 +277,63 @@
                             <span class="sr-only">Close modal</span>
                         </button>
                     </div>
-                    <div class="p-4 md:p-5 space-y-4">
-                        <form action="{{ route('admin.addSite') }}" method="POST">
+                    <div class="p-4 space-y-3">
+                        <form action="{{ route('admin.addSite') }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            <div class="mb-4">
-                                <label for="name"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Name</label>
-                                <input type="text" id="name" name="name"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                    required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="address"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Address</label>
-                                <input type="text" id="address" name="address"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                    required>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="add_name" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Name</label>
+                                    <input type="text" id="add_name" name="name"
+                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                </div>
+                                <div>
+                                    <label for="add_address" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Address</label>
+                                    <input type="text" id="add_address" name="address"
+                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                </div>
+                                <div>
+                                    <label for="add_contact_email" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Contact Email</label>
+                                    <input type="email" id="add_contact_email" name="contact_email"
+                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                </div>
+                                <div>
+                                    <label for="add_contact_phone" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Contact Phone</label>
+                                    <input type="text" id="add_contact_phone" name="contact_phone"
+                                        class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4 mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                <div class="col-span-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">Fee Configuration</div>
-                                <div>
-                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Customer Fee (Fixed)</label>
-                                    <input type="number" step="0.01" name="customer_fee_fixed" value="0.00" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Customer Fee (%)</label>
-                                    <input type="number" step="0.01" name="customer_fee_percent" value="0.00" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Site Fee (Fixed)</label>
-                                    <input type="number" step="0.01" name="site_fee_fixed" value="0.00" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 dark:text-gray-300 text-xs font-bold mb-1">Site Fee (%)</label>
-                                    <input type="number" step="0.01" name="site_fee_percent" value="0.00" class="shadow appearance-none border rounded w-full py-2 px-3 text-xs text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
+                            <div class="mt-3">
+                                <label for="add_logo" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site Logo</label>
+                                <input type="file" id="add_logo" name="logo" class="block w-full text-[10px] text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                            
+                            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
+                                <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fee Configuration</div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (Fixed)</label>
+                                        <input type="number" step="1" name="customer_fee_fixed" value="0" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (%)</label>
+                                        <input type="number" step="0.01" name="customer_fee_percent" value="0.00" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (Fixed)</label>
+                                        <input type="number" step="1" name="site_fee_fixed" value="0" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (%)</label>
+                                        <input type="number" step="0.01" name="site_fee_percent" value="0.00" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                    </div>
                                 </div>
                             </div>
 
                             <button type="submit"
-                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add
-                                Site</button>
+                                class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
+                                Add Site
+                            </button>
                         </form>
                     </div>
                 </div>

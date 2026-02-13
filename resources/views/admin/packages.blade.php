@@ -2,65 +2,71 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-box-open mr-2 text-blue-500"></i>Manage Packages</h1>
+    <div class="container mx-auto mt-4 px-4">
+        <h1 class="text-xl font-black mb-4 text-gray-900 dark:text-white uppercase tracking-tight">
+            <i class="fas fa-box-open mr-2 text-blue-500"></i> Manage Packages
+        </h1>
 
 
 
         <!-- Add Package Button -->
         @can('create_packages')
         <button data-modal-target="add-package-modal" data-modal-toggle="add-package-modal"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 shadow-lg transition duration-200">
-            <i class="fas fa-plus mr-2"></i>Add Package
+            class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-lg mb-4 shadow-sm transition">
+            <i class="fas fa-plus mr-2"></i> Add Package
         </button>
         @endcan
 
         <!-- Filter by Site -->
-        <form method="GET" action="{{ route('admin.packages') }}" class="mb-4">
-            <label for="site_id" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Filter by
-                Site</label>
-            <select id="site_id" name="site_id"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">
-                <option value="">All Sites</option>
-                @foreach ($sites as $site)
-                    <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>
-                        {{ $site->name }}
-                    </option>
-                @endforeach
-            </select>
-            <button type="submit" class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Filter
-            </button>
-        </form>
+        <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm mb-4 border border-gray-100 dark:border-gray-700 max-w-sm">
+            <form method="GET" action="{{ route('admin.packages') }}">
+                <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Filter by Site</label>
+                <div class="flex gap-2">
+                    <select id="site_id" name="site_id"
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
+                        <option value="">All Sites</option>
+                        @foreach ($sites as $site)
+                            <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>
+                                {{ $site->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="bg-gray-800 dark:bg-gray-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition">
+                        Filter
+                    </button>
+                </div>
+            </form>
+        </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white dark:bg-gray-800">
-            <thead>
-                <tr class="bg-gray-200 dark:bg-gray-700">
-                    <th class="py-2 text-gray-800 dark:text-gray-200">Name</th>
-                    <th class="py-2 text-gray-800 dark:text-gray-200">Cost</th>
-                    <th class="py-2 text-gray-800 dark:text-gray-200">Description</th>
-                    <th class="py-2 text-gray-800 dark:text-gray-200">Site</th>
-                    <th class="py-2 text-gray-800 dark:text-gray-200">Actions</th>
-                </tr>
-            </thead>
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                <thead>
+                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                        <th class="py-2 px-3 text-left">Name</th>
+                        <th class="py-2 px-3 text-left">Cost</th>
+                        <th class="py-2 px-3 text-left">Description</th>
+                        <th class="py-2 px-3 text-left">Site</th>
+                        <th class="py-2 px-3 text-right">Actions</th>
+                    </tr>
+                </thead>
             <tbody>
                 @foreach ($packages as $package)
-                    <tr class="text-gray-700 dark:text-gray-300">
-                        <td class="py-2 px-2 whitespace-nowrap">{{ $package->name }}</td>
-                        <td class="py-2 whitespace-nowrap">UGX {{ number_format($package->cost) }}</td>
-                        <td class="py-2">{{ $package->description }}</td>
-                        <td class="py-2 whitespace-nowrap">{{ $package->site->name ?? 'N/A' }}</td>
-                        <td class="py-2 whitespace-nowrap">
+                    <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                        <td class="py-2 px-3 text-xs font-bold text-gray-900 dark:text-white whitespace-nowrap">{{ $package->name }}</td>
+                        <td class="py-2 px-3 text-xs font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">UGX {{ number_format($package->cost) }}</td>
+                        <td class="py-2 px-3 text-xs text-gray-500 dark:text-gray-400">{{ $package->description }}</td>
+                        <td class="py-2 px-3 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $package->site->name ?? 'N/A' }}</td>
+                        <td class="py-2 px-3 text-right whitespace-nowrap">
                             @can('edit_packages')
                             <button data-modal-target="edit-modal-{{ $package->id }}"
                                 data-modal-toggle="edit-modal-{{ $package->id }}"
-                                class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">Edit</button>
+                                class="text-xs font-black uppercase text-blue-600 hover:text-blue-800 px-2 py-1 transition">Edit</button>
                             @endcan
                             @can('delete_packages')
                             <button data-modal-target="delete-modal-{{ $package->id }}"
                                 data-modal-toggle="delete-modal-{{ $package->id }}"
-                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Delete</button>
+                                class="text-xs font-black uppercase text-red-600 hover:text-red-800 px-2 py-1 transition">Delete</button>
                             @endcan
                         </td>
                     </tr>
@@ -86,49 +92,40 @@
                                         <span class="sr-only">Close modal</span>
                                     </button>
                                 </div>
-                                <div class="p-4 md:p-5 space-y-4">
+                                <div class="p-4 space-y-3">
                                     <form action="{{ route('admin.updatePackage', $package->id) }}" method="POST">
                                         @csrf
                                         @method('PUT')
-                                        <div class="mb-4">
-                                            <label for="name"
-                                                class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Name</label>
-                                            <input type="text" id="name" name="name"
-                                                value="{{ $package->name }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                                required>
+                                        <div class="mb-3">
+                                            <label for="name" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Name</label>
+                                            <input type="text" id="name" name="name" value="{{ $package->name }}"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="cost" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Cost (UGX)</label>
+                                            <input type="number" step="1" id="cost" name="cost" value="{{ $package->cost }}"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="description" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Description</label>
+                                            <textarea id="description" name="description" rows="2"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>{{ $package->description }}</textarea>
                                         </div>
                                         <div class="mb-4">
-                                            <label for="cost"
-                                                class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Cost</label>
-                                            <input type="number" step="0.01" id="cost" name="cost"
-                                                value="{{ $package->cost }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                                required>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="description"
-                                                class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Description</label>
-                                            <textarea id="description" name="description"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200">{{ $package->description }}</textarea>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="site_id"
-                                                class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Site</label>
+                                            <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
                                             <select id="site_id" name="site_id"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                                required>
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
                                                 @foreach ($sites as $site)
-                                                    <option value="{{ $site->id }}"
-                                                        {{ $package->site_id == $site->id ? 'selected' : '' }}>
+                                                    <option value="{{ $site->id }}" {{ $package->site_id == $site->id ? 'selected' : '' }}>
                                                         {{ $site->name }}
                                                     </option>
                                                 @endforeach
                                             </select>
                                         </div>
                                         <button type="submit"
-                                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Save
-                                            Changes</button>
+                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
+                                            Save Changes
+                                        </button>
                                     </form>
                                 </div>
                             </div>
@@ -203,43 +200,37 @@
                             <span class="sr-only">Close modal</span>
                         </button>
                     </div>
-                    <div class="p-4 md:p-5 space-y-4">
+                    <div class="p-4 space-y-3">
                         <form action="{{ route('admin.addPackage') }}" method="POST">
                             @csrf
-                            <div class="mb-4">
-                                <label for="name"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Name</label>
-                                <input type="text" id="name" name="name"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                    required>
+                            <div class="mb-3">
+                                <label for="add_name" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Name</label>
+                                <input type="text" id="add_name" name="name"
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                            </div>
+                            <div class="mb-3">
+                                <label for="add_cost" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Cost (UGX)</label>
+                                <input type="number" step="1" id="add_cost" name="cost"
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                            </div>
+                            <div class="mb-3">
+                                <label for="add_description" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Description</label>
+                                <textarea id="add_description" name="description" rows="2"
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm></textarea>
                             </div>
                             <div class="mb-4">
-                                <label for="cost"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Cost</label>
-                                <input type="number" step="0.01" id="cost" name="cost"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                    required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="description"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Description</label>
-                                <textarea id="description" name="description"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"></textarea>
-                            </div>
-                            <div class="mb-4">
-                                <label for="site_id"
-                                    class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Site</label>
-                                <select id="site_id" name="site_id"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-600 dark:text-gray-200"
-                                    required>
+                                <label for="add_site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
+                                <select id="add_site_id" name="site_id"
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
                                     @foreach ($sites as $site)
                                         <option value="{{ $site->id }}">{{ $site->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <button type="submit"
-                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add
-                                Package</button>
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
+                                Add Package
+                            </button>
                         </form>
                     </div>
                 </div>

@@ -16,7 +16,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        $settings = \App\Models\SystemSetting::first();
+        return view('auth.login', compact('settings'));
     }
 
     /**
@@ -31,11 +32,11 @@ class AuthenticatedSessionController extends Controller
         $user = Auth::user();
 
         if ($user->can('view_owner_dashboard') || $user->can('view_manager_dashboard')) {
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->route('admin.dashboard');
         }
 
         if ($user->can('view_agent_dashboard')) {
-            return redirect()->intended(route('agent.dashboard'));
+            return redirect()->route('agent.dashboard');
         }
 
         return redirect()->intended(route('dashboard', absolute: false));

@@ -9,14 +9,14 @@
          </button>
          <div class="collapse navbar-collapse" id="navbarNav">
              <ul class="navbar-nav">
-                 @role('Owner')
+                 @canany(['view_sites', 'create_sites', 'edit_sites', 'delete_sites'])
                  <li class="nav-item">
                      <a class="nav-link" href="{{ route('admin.sites') }}">
                          <i class="fas fa-fw fa-map-marker-alt"></i>
                          Sites
                      </a>
                  </li>
-                 @endrole
+                 @endcanany
                  <li class="nav-item">
                      <a class="nav-link" href="{{ route('admin.packages') }}">
                          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"

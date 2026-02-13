@@ -19,13 +19,20 @@ class SiteController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'contact_email' => 'nullable|email',
+            'contact_phone' => 'nullable|string',
         ]);
 
-        Site::create($request->only([
-            'name', 'address', 
-            'customer_fee_fixed', 'customer_fee_percent', 
-            'site_fee_fixed', 'site_fee_percent'
-        ]));
+        $data = $request->except('logo');
+        
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
+            $data['logo'] = $logoPath;
+            \Illuminate\Support\Facades\Log::info("Site logo uploaded: " . $logoPath);
+        }
+
+        Site::create($data);
 
         return redirect()->route('admin.sites')->with('success', 'Site created successfully.');
     }
@@ -35,13 +42,20 @@ class SiteController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'contact_email' => 'nullable|email',
+            'contact_phone' => 'nullable|string',
         ]);
 
-        $site->update($request->only([
-            'name', 'address', 
-            'customer_fee_fixed', 'customer_fee_percent', 
-            'site_fee_fixed', 'site_fee_percent'
-        ]));
+        $data = $request->except('logo');
+
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
+            $data['logo'] = $logoPath;
+            \Illuminate\Support\Facades\Log::info("Site logo updated for site {$site->id}: " . $logoPath);
+        }
+
+        $site->update($data);
 
         return redirect()->route('admin.sites')->with('success', 'Site updated successfully.');
     }

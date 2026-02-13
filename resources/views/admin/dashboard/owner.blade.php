@@ -2,113 +2,113 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
-            <h1 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Platform Overview</h1>
-            <p class="text-gray-500 dark:text-gray-400">Analysis from {{ $dateFrom }} to {{ $dateTo }}</p>
+            <h1 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Platform Overview</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Analysis from {{ $dateFrom }} to {{ $dateTo }}</p>
         </div>
         
         <!-- Date Filters -->
-        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <form action="{{ route('admin.dashboard') }}" method="GET" class="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div class="flex items-center gap-2 px-2 border-r border-gray-100 dark:border-gray-700">
-                <i class="fas fa-calendar-alt text-blue-500"></i>
-                <input type="date" name="date_from" value="{{ $dateFrom }}" class="bg-transparent border-none text-xs font-bold focus:ring-0">
-                <span class="text-gray-300 font-bold">TO</span>
-                <input type="date" name="date_to" value="{{ $dateTo }}" class="bg-transparent border-none text-xs font-bold focus:ring-0">
+                <i class="fas fa-calendar-alt text-blue-500 text-xs"></i>
+                <input type="date" name="date_from" value="{{ $dateFrom }}" class="bg-transparent border-none text-[10px] font-bold focus:ring-0 p-1">
+                <span class="text-gray-300 font-bold text-[10px]">TO</span>
+                <input type="date" name="date_to" value="{{ $dateTo }}" class="bg-transparent border-none text-[10px] font-bold focus:ring-0 p-1">
             </div>
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase px-4 py-2 rounded-lg transition shadow-sm active:scale-95">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] uppercase px-3 py-1.5 rounded-lg transition shadow-sm active:scale-95">
                 Apply Filter
             </button>
         </form>
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <!-- Top Site Alert -->
         @php $topSite = $sitePerformance->sortByDesc('revenue')->first(); @endphp
-        <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-2xl shadow-lg border-none lg:col-span-1">
-            <p class="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Top Performing Site</p>
-            <p class="text-xl font-black text-white truncate">{{ $topSite->name ?? 'N/A' }}</p>
-            <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span class="text-[10px] font-bold text-white/80">{{ number_format($topSite->revenue ?? 0) }} UGX</span>
-                <i class="fas fa-crown text-yellow-400"></i>
+        <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-4 rounded-xl shadow-md border-none lg:col-span-1">
+            <p class="text-[9px] font-black text-indigo-100 uppercase tracking-widest mb-1">Top Site</p>
+            <p class="text-lg font-black text-white truncate">{{ $topSite->name ?? 'N/A' }}</p>
+            <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
+                <span class="text-[9px] font-bold text-white/80">{{ number_format($topSite->revenue ?? 0) }} UGX</span>
+                <i class="fas fa-crown text-yellow-400 text-xs"></i>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
-            <p class="text-2xl font-black text-gray-900 dark:text-white">{{ number_format($stats['total_revenue']) }}</p>
-            <div class="mt-4 flex items-center text-[10px] font-bold text-green-500">
-                <i class="fas fa-chart-line mr-1"></i> +8.4% growth
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
+            <p class="text-xl font-black text-gray-900 dark:text-white">{{ number_format($stats['total_revenue']) }}</p>
+            <div class="mt-3 flex items-center text-[9px] font-bold text-green-500">
+                <i class="fas fa-chart-line mr-1"></i> +8.4%
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Active Sites</p>
-            <p class="text-2xl font-black text-gray-900 dark:text-white">{{ $stats['total_sites'] }}</p>
-            <div class="mt-4 flex items-center text-[10px] font-bold text-blue-500">
-                <i class="fas fa-check-circle mr-1"></i> All systems online
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Active Sites</p>
+            <p class="text-xl font-black text-gray-900 dark:text-white">{{ $stats['total_sites'] }}</p>
+            <div class="mt-3 flex items-center text-[9px] font-bold text-blue-500">
+                <i class="fas fa-check-circle mr-1"></i> Healthy
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Voucher Stock</p>
-            <p class="text-2xl font-black text-orange-600">{{ number_format($stats['active_vouchers']) }}</p>
-            <div class="mt-4 flex items-center text-[10px] font-bold text-orange-500">
-                <i class="fas fa-exclamation-triangle mr-1"></i> 3 sites low stock
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Stock</p>
+            <p class="text-xl font-black text-orange-600">{{ number_format($stats['active_vouchers']) }}</p>
+            <div class="mt-3 flex items-center text-[9px] font-bold text-orange-500">
+                <i class="fas fa-exclamation-triangle mr-1"></i> Low stock
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Platform ATV</p>
-            <p class="text-2xl font-black text-purple-600">{{ number_format($stats['avg_transaction']) }}</p>
-            <div class="mt-4 flex items-center text-[10px] font-bold text-purple-500">
-                <i class="fas fa-wallet mr-1"></i> Per transaction
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">ATV</p>
+            <p class="text-xl font-black text-purple-600">{{ number_format($stats['avg_transaction']) }}</p>
+            <div class="mt-3 flex items-center text-[9px] font-bold text-purple-500">
+                <i class="fas fa-wallet mr-1"></i> Per tx
             </div>
         </div>
     </div>
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase mb-6 tracking-tight">Revenue by Site</h3>
-            <div class="aspect-[16/9]">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase mb-4 tracking-tight">Revenue by Site</h3>
+            <div class="aspect-[16/7]">
                 <canvas id="siteRevenueChart"></canvas>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase mb-6 tracking-tight">Sales Distribution</h3>
-            <div class="aspect-[16/9]">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase mb-4 tracking-tight">Sales Distribution</h3>
+            <div class="aspect-[16/7]">
                 <canvas id="siteSalesChart"></canvas>
             </div>
         </div>
     </div>
 
     <!-- Recent Activity -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-            <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Recent Platform Transactions</h3>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Recent Platform Transactions</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900/50">
-                        <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase">Transaction ID</th>
-                        <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase">Site</th>
-                        <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase">Amount</th>
-                        <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase">Agent</th>
-                        <th class="px-6 py-3 text-[10px] font-black text-gray-400 uppercase">Status</th>
+                        <th class="px-4 py-2 text-[9px] font-black text-gray-400 uppercase">TX ID</th>
+                        <th class="px-4 py-2 text-[9px] font-black text-gray-400 uppercase">Site</th>
+                        <th class="px-4 py-2 text-[9px] font-black text-gray-400 uppercase">Amount</th>
+                        <th class="px-4 py-2 text-[9px] font-black text-gray-400 uppercase">Agent</th>
+                        <th class="px-4 py-2 text-[9px] font-black text-gray-400 uppercase">Status</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-xs">
                     @foreach($stats['recent_transactions'] as $tx)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td class="px-6 py-4 font-mono text-xs font-bold text-gray-900 dark:text-white">{{ $tx->transaction_id }}</td>
-                        <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ $tx->site->name ?? 'SYSTEM' }}</td>
-                        <td class="px-6 py-4 text-sm font-black text-gray-900 dark:text-white">{{ number_format($tx->amount) }} UGX</td>
-                        <td class="px-6 py-4 text-xs text-gray-500">{{ $tx->agent->name ?? 'API/Direct' }}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 rounded-full text-[10px] font-black uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <td class="px-4 py-2 font-mono font-bold text-gray-900 dark:text-white">{{ $tx->transaction_id }}</td>
+                        <td class="px-4 py-2 font-bold text-blue-600">{{ $tx->site->name ?? 'SYSTEM' }}</td>
+                        <td class="px-4 py-2 font-black text-gray-900 dark:text-white">{{ number_format($tx->amount) }}</td>
+                        <td class="px-4 py-2 text-gray-500">{{ $tx->agent->name ?? 'API' }}</td>
+                        <td class="px-4 py-2">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                                 {{ $tx->status }}
                             </span>
                         </td>

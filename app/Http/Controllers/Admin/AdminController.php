@@ -98,51 +98,6 @@ class AdminController extends Controller
         return view('admin.dashboard');
     }
 
-    public function showUsers()
-    {
-        if (!Auth::user()->can('view_users')) {
-            abort(403);
-        }
-
-        $user = Auth::user();
-        $query = User::with('roles');
-
-        if ($user->site_id) {
-            $query->where('site_id', $user->site_id);
-        }
-
-        $users = $query->paginate();
-        
-        $sites = [];
-        if ($user->hasRole('Owner')) {
-            $sites = Site::all();
-        }
-
-        return view('admin.users', compact('users', 'sites'));
-    }
-
-    public function editUser(User $user)
-    {
-        if (!Auth::user()->can('edit_users')) {
-            abort(403);
-        }
-        // Logic to edit user roles
-    }
-
-    public function deleteUser(User $user)
-    {
-        if (!Auth::user()->can('delete_users')) {
-            abort(403);
-        }
-
-        // Hierarchy Check
-        if (Auth::user()->site_id && $user->site_id != Auth::user()->site_id) {
-             abort(403, 'Cannot delete user from another site.');
-        }
-
-        $user->delete();
-        return redirect()->route('admin.users')->with('success', 'User deleted successfully.');
-    }
 
     public function showReports(Request $request)
     {
@@ -241,8 +196,22 @@ class AdminController extends Controller
         if (!Auth::user()->can('manage_settings')) {
              abort(403);
         }
+
+        $request->validate([
+            'system_name' => 'required|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
         $settings = SystemSetting::first();
-        $settings->update($request->all());
+        $data = $request->except('logo');
+
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
+            $data['logo'] = $logoPath;
+            \Illuminate\Support\Facades\Log::info("System logo updated: " . $logoPath);
+        }
+
+        $settings->update($data);
         return redirect()->route('admin.settings')->with('success', 'Settings updated successfully.');
     }
 
@@ -251,7 +220,13 @@ class AdminController extends Controller
         if (!Auth::user()->can('create_vouchers')) {
              abort(403);
         }
-        $packages = Package::paginate(10);
+        
+        $query = Package::query();
+        if (Auth::user()->site_id) {
+            $query->where('site_id', Auth::user()->site_id);
+        }
+        
+        $packages = $query->paginate(10);
         return view('admin.upload_vouchers', compact('packages'));
     }
 
@@ -276,9 +251,25 @@ class AdminController extends Controller
             }
         }
 
-        Excel::import(new VouchersImport($packageId), $request->file('file'));
-
-        return redirect()->route('admin.vouchers')->with('success', 'Vouchers uploaded successfully.');
+        try {
+            Excel::import(new VouchersImport($packageId), $request->file('file'));
+            return redirect()->route('admin.vouchers')->with('success', 'Vouchers uploaded successfully.');
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMsgs = [];
+            foreach ($failures as $failure) {
+                $errors = $failure->errors();
+                $values = $failure->values();
+                $value = $values[0] ?? 'N/A';
+                
+                // Format: Row 5: Voucher is already in the system. (Value: 'ABC-123')
+                $errorMsgs[] = "Row {$failure->row()}: " . ($errors[0] ?? 'Validation failed') . " (Value: '{$value}')";
+            }
+            return redirect()->back()->withErrors($errorMsgs)->withInput();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Voucher import failed: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to import vouchers: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function createPackage(Request $request)

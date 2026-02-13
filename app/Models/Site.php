@@ -20,7 +20,10 @@ class Site extends Model
         'customer_fee_fixed',
         'customer_fee_percent',
         'site_fee_fixed',
-        'site_fee_percent'
+        'site_fee_percent',
+        'logo',
+        'contact_email',
+        'contact_phone'
     ];
 
     protected static function boot()

@@ -1,76 +1,76 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                <i class="fas fa-chart-line mr-2 text-blue-500"></i>Sales Overview & Analytics
+    <div class="container mx-auto px-4 mt-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+            <h1 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                <i class="fas fa-chart-line mr-2 text-blue-500"></i> Sales Overview & Analytics
             </h1>
             
-            <!-- Export/Refresh Buttons (Optional future proofing) -->
+            <!-- Export/Refresh Buttons -->
             <div class="flex gap-2">
-                <button onclick="window.location.reload()" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                <button onclick="window.location.reload()" class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-sync-alt mr-2"></i> Refresh
                 </button>
             </div>
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
                 <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 mr-4">
-                        <i class="fas fa-money-bill-wave fa-lg"></i>
+                    <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 mr-3">
+                        <i class="fas fa-money-bill-wave"></i>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Revenue</p>
-                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">UGX {{ number_format($summary['total_revenue']) }}</h3>
+                        <p class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Total Revenue</p>
+                        <h3 class="text-lg font-black text-gray-900 dark:text-white">UGX {{ number_format($summary['total_revenue']) }}</h3>
                     </div>
                 </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
                 <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 mr-4">
-                        <i class="fas fa-shopping-cart fa-lg"></i>
+                    <div class="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 mr-3">
+                        <i class="fas fa-shopping-cart"></i>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Vouchers Sold</p>
-                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($summary['total_sales']) }}</h3>
+                        <p class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Vouchers Sold</p>
+                        <h3 class="text-lg font-black text-gray-900 dark:text-white">{{ number_format($summary['total_sales']) }}</h3>
                     </div>
                 </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
                 <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 mr-4">
-                        <i class="fas fa-star fa-lg"></i>
+                    <div class="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 mr-3">
+                        <i class="fas fa-star"></i>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Top Package</p>
-                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $summary['top_package'] }}</h3>
+                        <p class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Top Package</p>
+                        <h3 class="text-lg font-black text-gray-900 dark:text-white">{{ $summary['top_package'] }}</h3>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Filter Form -->
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
-            <form method="GET" action="{{ route('admin.reports') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+            <form method="GET" action="{{ route('admin.reports') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
                 <div>
-                    <label for="date_from" class="block text-xs font-semibold text-gray-500 uppercase mb-1">From Date</label>
+                    <label for="date_from" class="block text-[9px] font-black uppercase text-gray-400 mb-1">From</label>
                     <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}"
-                        class="block w-full text-sm p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                 </div>
                 <div>
-                    <label for="date_to" class="block text-xs font-semibold text-gray-500 uppercase mb-1">To Date</label>
+                    <label for="date_to" class="block text-[9px] font-black uppercase text-gray-400 mb-1">To</label>
                     <input type="date" name="date_to" id="date_to" value="{{ request('date_to') }}"
-                        class="block w-full text-sm p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                 </div>
                 
                 @if(!Auth::user()->site_id)
                 <div>
-                    <label for="site_id" class="block text-xs font-semibold text-gray-500 uppercase mb-1">Site</label>
+                    <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
                     <select name="site_id" id="site_id"
-                        class="block w-full text-sm p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                         <option value="">All Sites</option>
                         @foreach ($sites as $site)
                             <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>
@@ -82,9 +82,9 @@
                 @endif
 
                 <div>
-                    <label for="package_id" class="block text-xs font-semibold text-gray-500 uppercase mb-1">Package</label>
+                    <label for="package_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Package</label>
                     <select name="package_id" id="package_id"
-                        class="block w-full text-sm p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                         <option value="">All Packages</option>
                         @foreach ($packages as $package)
                             <option value="{{ $package->id }}" 
@@ -97,46 +97,46 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                        Apply Filters
-                    </button>
-                    <a href="{{ route('admin.reports') }}" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                    <a href="{{ route('admin.reports') }}" class="flex-1 text-center bg-gray-100 dark:bg-gray-700 text-gray-500 text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition">
                         Clear
                     </a>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition shadow-sm">
+                        Apply
+                    </button>
                 </div>
             </form>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             <!-- Revenue Trend Chart -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 lg:col-span-2">
-                <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Revenue Trend</h3>
-                <div class="h-[300px]">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 lg:col-span-2">
+                <h3 class="text-xs font-black uppercase text-gray-400 tracking-widest mb-4">Revenue Trend</h3>
+                <div class="h-[250px]">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
 
             <!-- Sales by Package Bar Chart -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Sales Distribution</h3>
-                <div class="h-[300px]">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                <h3 class="text-xs font-black uppercase text-gray-400 tracking-widest mb-4">Sales Distribution</h3>
+                <div class="h-[250px]">
                     <canvas id="salesChart"></canvas>
                 </div>
             </div>
 
             <!-- Revenue by Site Pie Chart -->
             @if(!Auth::user()->site_id)
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Revenue by Site</h3>
-                <div class="h-[300px] flex justify-center">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                <h3 class="text-xs font-black uppercase text-gray-400 tracking-widest mb-4">Revenue by Site</h3>
+                <div class="h-[250px] flex justify-center">
                     <canvas id="sitePieChart"></canvas>
                 </div>
             </div>
             @else
             <!-- Revenue by Package Pie Chart for Site Managers -->
-             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Revenue by Package</h3>
-                <div class="h-[300px] flex justify-center">
+             <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                <h3 class="text-xs font-black uppercase text-gray-400 tracking-widest mb-4">Revenue by Package</h3>
+                <div class="h-[250px] flex justify-center">
                     <canvas id="packagePieChart"></canvas>
                 </div>
             </div>
@@ -144,30 +144,30 @@
         </div>
 
         <!-- Data Table -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead>
-                        <tr class="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 dark:text-gray-400 font-bold border-b border-gray-200 dark:border-gray-700">
-                            <th class="py-3 px-4 text-left">Package</th>
+                        <tr class="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                            <th class="py-2 px-3 text-left">Package</th>
                             @if(!Auth::user()->site_id)
-                            <th class="py-3 px-4 text-left">Site</th>
+                            <th class="py-2 px-3 text-left">Site</th>
                             @endif
-                            <th class="py-3 px-4 text-center">Unit Price</th>
-                            <th class="py-3 px-4 text-center">Sales Count</th>
-                            <th class="py-3 px-4 text-right">Total Revenue</th>
+                            <th class="py-2 px-3 text-center">Unit Price</th>
+                            <th class="py-2 px-3 text-center">Sales</th>
+                            <th class="py-2 px-3 text-right">Revenue</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
                         @forelse ($salesData as $data)
-                            <tr class="text-sm hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                <td class="py-3 px-4 font-medium text-gray-900 dark:text-white">{{ $data->package_name }}</td>
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                <td class="py-2 px-3 text-xs font-bold text-gray-900 dark:text-white">{{ $data->package_name }}</td>
                                 @if(!Auth::user()->site_id)
-                                <td class="py-3 px-4 text-gray-600 dark:text-gray-400">{{ $data->site_name }}</td>
+                                <td class="py-2 px-3 text-xs text-gray-600 dark:text-gray-400">{{ $data->site_name }}</td>
                                 @endif
-                                <td class="py-3 px-4 text-center text-gray-600 dark:text-gray-400">{{ number_format($data->cost) }}</td>
-                                <td class="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">{{ number_format($data->sales_count) }}</td>
-                                <td class="py-3 px-4 text-right font-bold text-gray-900 dark:text-white">UGX {{ number_format($data->revenue) }}</td>
+                                <td class="py-2 px-3 text-xs text-center text-gray-600 dark:text-gray-400">{{ number_format($data->cost) }}</td>
+                                <td class="py-2 px-3 text-xs text-center font-black text-blue-600 dark:text-blue-400">{{ number_format($data->sales_count) }}</td>
+                                <td class="py-2 px-3 text-xs text-right font-black text-gray-900 dark:text-white">UGX {{ number_format($data->revenue) }}</td>
                             </tr>
                         @empty
                             <tr>

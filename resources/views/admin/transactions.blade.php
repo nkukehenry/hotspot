@@ -1,17 +1,19 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white"><i class="fas fa-exchange-alt mr-2 text-blue-500"></i>Transactions</h1>
+    <div class="container mx-auto mt-4 px-4">
+        <h1 class="text-xl font-black mb-4 text-gray-900 dark:text-white uppercase tracking-tight">
+            <i class="fas fa-exchange-alt mr-2 text-blue-500"></i> Transactions
+        </h1>
 
         <!-- Filter Form -->
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
-            <form action="{{ route('admin.transactions') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+            <form action="{{ route('admin.transactions') }}" method="GET" id="filter-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
                 
                 @if(Auth::user()->hasRole('Owner'))
                 <div>
-                    <label for="site_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site</label>
-                    <select id="site_id" name="site_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                    <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
+                    <select id="site_id" name="site_id" class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                         <option value="">All Sites</option>
                         @foreach($sites as $site)
                             <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
@@ -21,8 +23,8 @@
                 @endif
 
                 <div>
-                    <label for="package_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Package</label>
-                    <select id="package_id" name="package_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                    <label for="package_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Package</label>
+                    <select id="package_id" name="package_id" class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                         <option value="">All Packages</option>
                         @foreach($packages as $package)
                             <option value="{{ $package->id }}" {{ request('package_id') == $package->id ? 'selected' : '' }}>{{ $package->name }}</option>
@@ -31,91 +33,78 @@
                 </div>
 
                 <div>
-                    <label for="mobile_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mobile Number</label>
-                    <input type="text" id="mobile_number" name="mobile_number" value="{{ request('mobile_number') }}" placeholder="07..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                    <label for="mobile_number" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Mobile Number</label>
+                    <input type="text" id="mobile_number" name="mobile_number" value="{{ request('mobile_number') }}" placeholder="07..." class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                 </div>
 
                 <div>
-                    <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date From</label>
-                    <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                    <label for="date_from" class="block text-[9px] font-black uppercase text-gray-400 mb-1">From</label>
+                    <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}" class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                 </div>
 
                 <div>
-                    <label for="date_to" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date To</label>
-                    <input type="date" id="date_to" name="date_to" value="{{ request('date_to') }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                    <label for="date_to" class="block text-[9px] font-black uppercase text-gray-400 mb-1">To</label>
+                    <input type="date" id="date_to" name="date_to" value="{{ request('date_to') }}" class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                 </div>
             </form>
-             <div class="mt-4 flex justify-end">
-                <button type="submit" form="filter-form" onclick="document.querySelector('form').submit()" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Filter</button>
-                <a href="{{ route('admin.transactions') }}" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">Clear</a>
+             <div class="mt-3 flex justify-end gap-2">
+                <a href="{{ route('admin.transactions') }}" class="text-gray-500 hover:text-gray-700 text-[10px] font-black uppercase tracking-widest px-3 py-2">Clear</a>
+                <button type="submit" form="filter-form" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg shadow-sm transition">
+                    Apply Filter
+                </button>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
             <div class="overflow-x-auto">
-                <table class="min-w-full bg-white dark:bg-gray-800">
+                <table class="min-w-full">
                 <thead>
-                    <tr class="bg-gray-200 dark:bg-gray-700 text-sm uppercase leading-normal">
-                         <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Date
-                        </th>
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Site
-                        </th>
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Mobile Number
-                        </th>
-                         <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Voucher Code
-                        </th>
-                         <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Package
-                        </th>
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Amount
-                        </th>
-                        <th class="py-2 px-3 text-left text-gray-800 dark:text-gray-200">
-                            Status
-                        </th>
+                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                         <th class="py-2 px-3 text-left">Date</th>
+                         <th class="py-2 px-3 text-left">Site</th>
+                         <th class="py-2 px-3 text-left">Mobile Number</th>
+                         <th class="py-2 px-3 text-left">Voucher Code</th>
+                         <th class="py-2 px-3 text-left">Package</th>
+                         <th class="py-2 px-3 text-left">Amount</th>
+                         <th class="py-2 px-3 text-left">Status</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-600 dark:text-gray-300 text-sm font-light">
                     @forelse ($transactions as $transaction)
-                        <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 even:bg-gray-50 dark:even:bg-gray-800 transition-colors duration-200">
-                             <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <p class="text-gray-900 dark:text-white whitespace-no-wrap">
-                                    {{ $transaction->created_at->format('M d, Y H:i') }}
+                        <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                             <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs text-gray-600 dark:text-gray-400">
+                                    {{ $transaction->created_at->format('M d, H:i') }}
                                 </p>
                             </td>
-                            <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <p class="text-gray-900 dark:text-white whitespace-no-wrap">
+                            <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs font-bold text-gray-900 dark:text-white">
                                     {{ $transaction->site->name ?? 'N/A' }}
                                 </p>
                             </td>
-                            <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <p class="text-gray-900 dark:text-white whitespace-no-wrap">
+                            <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs text-gray-900 dark:text-white">
                                     {{ $transaction->mobile_number }}
                                 </p>
                             </td>
-                             <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <p class="text-gray-900 dark:text-white whitespace-no-wrap font-mono">
+                             <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs font-mono text-blue-600 dark:text-blue-400">
                                     {{ isset($transaction->voucher->code) ? Str::mask($transaction->voucher->code, '*', 0, -4) : 'N/A' }}
                                 </p>
                             </td>
-                             <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <p class="text-gray-900 dark:text-white whitespace-no-wrap">
+                             <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs text-gray-600 dark:text-gray-400">
                                     {{ $transaction->voucher->package->name ?? 'N/A' }}
                                 </p>
                             </td>
-                            <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <p class="text-gray-900 dark:text-white whitespace-no-wrap font-bold">
-                                    {{ number_format($transaction->amount, 2) }}
+                            <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs font-black text-gray-900 dark:text-white">
+                                    {{ number_format($transaction->amount) }}
                                 </p>
                             </td>
-                            <td class="py-1 px-3 text-left whitespace-nowrap">
-                                <span class="relative inline-block px-3 py-1 font-semibold text-green-900 leading-tight">
-                                    <span aria-hidden class="absolute inset-0 bg-green-200 opacity-50 rounded-full"></span>
-                                    <span class="relative">{{ $transaction->status ?? 'Completed' }}</span>
+                            <td class="py-2 px-3 text-left whitespace-nowrap text-[10px]">
+                                <span class="px-2 py-0.5 font-black uppercase rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                    {{ $transaction->status ?? 'Completed' }}
                                 </span>
                             </td>
                         </tr>

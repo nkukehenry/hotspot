@@ -15,16 +15,25 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use App\Jobs\SendSmsJob;
+use App\Jobs\SendWhatsAppJob;
+use App\Services\AirtelPayment;
+use App\Services\MtnPayment;
+use App\Services\FeeService;
+use App\Services\LedgerService;
+
+
 
 class CustomerController extends Controller
 {
 
-    private PaymentService $paymentService;
-    private \App\Services\FeeService $feeService;
-    private \App\Services\LedgerService $ledgerService;
+    private MtnPayment $mtnPayment;
+    private AirtelPayment $airtelPayment;
+    private FeeService $feeService;
+    private LedgerService $ledgerService;
 
-    function __construct(PaymentService $paymentService, \App\Services\FeeService $feeService, \App\Services\LedgerService $ledgerService){
-        $this->paymentService = $paymentService;
+    function __construct(MtnPayment $mtnPayment, AirtelPayment $airtelPayment, FeeService $feeService, LedgerService $ledgerService){
+        $this->mtnPayment = $mtnPayment;
+        $this->airtelPayment = $airtelPayment;
         $this->feeService = $feeService;
         $this->ledgerService = $ledgerService;
     }
@@ -32,8 +41,8 @@ class CustomerController extends Controller
     public function showSites()
     {
         $sites = Site::all();
-        $sites = Site::all();
-        return view('customer.sites', compact('sites')); 
+        $settings = \App\Models\SystemSetting::first();
+        return view('customer.sites', compact('sites', 'settings')); 
     }
 
     public function showPackages($siteCode)
@@ -43,14 +52,29 @@ class CustomerController extends Controller
              $site = Site::where('slug',$siteCode)->firstOrFail();
         }
         
-        $packages = Package::where( 'site_id', $site->id)->get();
+        $packages = Package::where('site_id', $site->id)
+            ->whereHas('vouchers', function ($query) {
+                $query->where('is_used', 0);
+            })->get();
         return view('customer.packages', compact('packages', 'site'));
     }
 
     public function showPayment($packageCode)
     {
         $package = Package::where('code',$packageCode)->firstOrFail();
-        return view('customer.payment', compact('package'));
+        
+        // Re-verify availability before showing payment page
+        $hasVouchers = Voucher::where('package_id', $package->id) 
+                        ->where('is_used', 0)
+                        ->exists();
+
+        if (!$hasVouchers) {
+             return redirect()->route('customer.packages', $package->site->slug ?? $package->site->site_code)
+                ->with('error', 'Sorry, this package just went out of stock.');
+        }
+
+        $site = $package->site;
+        return view('customer.payment', compact('package', 'site'));
     }
 
     public function processPayment(Request $request, $packageCode)
@@ -66,23 +90,37 @@ class CustomerController extends Controller
         // Retrieve the package
         $package = Package::where('code', $packageCode)->firstOrFail();
 
-        // Check for available voucher
+        // Check for available voucher BEFORE anything else
         $voucher = Voucher::where('package_id', $package->id) 
                         ->where('is_used', 0)
                         ->first();
         
-
         // If no voucher is available, redirect with an error message
         if (!$voucher) {
-            return redirect()->route('customer.packages', $package->site->site_code ?? $package->site->slug)
+            return redirect()->route('customer.packages', $package->site->slug ?? $package->site->site_code)
                 ->with('error', 'Voucher system temporarily unavailable (Out of Stock).');
         }
 
-        // Set cookie for mobile number
-        setcookie('mobile_number', $request->mobileNumber, time() + (86400 * 30), "/"); // 30 days
+        // Set cookie for mobile number (30 days)
+        Cookie::queue('mobile_number', $request->mobileNumber, 43200);
 
         // Calculate Fees
         $feeData = $this->feeService->calculateFees($package->site, $package->cost);
+
+        $mobileNumber = $request->mobileNumber;
+        $paymentProvider = null;
+        $providerName = 'Unknown';
+
+        // Provider Selection Logic
+        if (Str::startsWith($mobileNumber, ['070', '075', '074'])) {
+            $paymentProvider = $this->airtelPayment;
+            $providerName = 'AIRTEL';
+        } elseif (Str::startsWith($mobileNumber, ['077', '078', '076'])) {
+            $paymentProvider = $this->mtnPayment;
+            $providerName = 'MTN';
+        } else {
+            return redirect()->back()->with('error', 'Unsupported mobile network prefix. Please use MTN (077, 078, 076) or Airtel (070, 075, 074).');
+        }
 
         // Record the transaction
         $transaction = Transaction::create([
@@ -98,9 +136,18 @@ class CustomerController extends Controller
             'site_id' => $package->site_id,
             'agent_id' => Auth::check() ? Auth::id() : null,
             'status' => 'pending', 
+            // We might want to store provider name if we add a column later, but for now Transaction model doesn't have it explicitly in fillable given the previous views.
         ]);
 
-        $response = (Object) $this->paymentService->pay($feeData['total_amount'], $request->mobileNumber, $transactionId);
+        // Update transaction history cookie AFTER creation using the immutable PK ID
+        $history = json_decode(Cookie::get('transaction_history') ?? $_COOKIE['transaction_history'] ?? '[]', true);
+        if (!is_array($history)) $history = [];
+        $history[] = $transaction->id;
+        // Keep only last 50 transactions
+        $history = array_slice($history, -50); 
+        Cookie::queue('transaction_history', json_encode($history), 43200);
+
+        $response = (Object) $paymentProvider->pay($feeData['total_amount'], $request->mobileNumber, $transactionId);
 
         Log::info("Payment Response: " . json_encode($response));
 
@@ -115,6 +162,8 @@ class CustomerController extends Controller
 
             $i=0;
 
+            $payment_reason = null;
+
             while($i<10){
 
                 $response =  Cache::get("callback_".$transactionId);
@@ -122,6 +171,7 @@ class CustomerController extends Controller
                 if($response){
 
                        $response = (Object) $response;
+                       $payment_reason = $response->reason ?? null;
 
                       if($response->status=="approved"  || $response->status == "closed"){
                         $is_success= 1;
@@ -146,14 +196,18 @@ class CustomerController extends Controller
             $transaction->status = 'failed';
             $transaction->save();
             
+            $errorMessage = $response->message ?? 'Payment Initiation Failed. Try again.';
+
             return redirect()->route('customer.payment', $package->code)
-                    ->with('error', 'Payment Initiation Failed. Try again.');
+                    ->with('error', $errorMessage);
         }
 
         // Clear the relevant cache after the transaction is recorded
         Cache::forget('reports_data'); // Clear specific cache for reports
         Cache::forget('package_revenue_data'); // Clear package revenue cache
         Cache::forget('location_revenue_data'); // Clear location revenue cache needs to be updated to site_revenue_data?
+
+        $is_success = 1;
 
         if($is_success== 1){
 
@@ -184,7 +238,7 @@ class CustomerController extends Controller
                 });
             }
 
-            $message = ($is_success==0)?'Payment still pending, please approve to receive a voucher':'Payment Failed. Try again.';
+            $message = ($is_success==0)?'Payment still pending, please approve to receive a voucher':'Payment Failed. ' . ($payment_reason ?? 'Try again.');
 
             $message_type = ($is_success==0)?'success':'error';
 
@@ -235,8 +289,18 @@ class CustomerController extends Controller
 
     public function showTransactions()
      { 
-         $mobile_number = Cookie::get('mobile_number');
-         $transactions = Transaction::where('mobile_number', $mobile_number)->with('voucher')->get();
+         // Retrieve transaction IDs from cookie
+         $history = json_decode(Cookie::get('transaction_history') ?? $_COOKIE['transaction_history'] ?? '[]', true);
+         
+         if (empty($history) || !is_array($history)) {
+             $transactions = collect();
+         } else {
+             // Query by ID (primary key) for stability
+             $transactions = Transaction::whereIn('id', $history)
+                                        ->with(['voucher', 'package'])
+                                        ->orderBy('created_at', 'desc')
+                                        ->get();
+         }
 
          return view('customer.transactions', compact('transactions'));
      }
@@ -292,6 +356,10 @@ class CustomerController extends Controller
         
             // Dispatch the job to send SMS
             SendSmsJob::dispatch($mobileNumber, $finalVoucher->code);
+            
+            // Dispatch the job to send WhatsApp
+            $whatsappMessage = "Your Wifi Voucher Code is: " . $finalVoucher->code;
+            SendWhatsAppJob::dispatch($mobileNumber, $whatsappMessage);
 
         }
     }

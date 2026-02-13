@@ -28,11 +28,28 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
-    'slack' => [
+        'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'mtn' => [
+        'api_url' => env('MTN_API_BASE_URI'),
+        'subscription_key' => env('MTN_COLLECTION_SUBSCRIPTION_KEY'),
+        'user_id' => env('MTN_COLLECTION_ID'),
+        'api_secret' => env('MTN_COLLECTION_SECRET'),
+        'environment' => env('MTN_ENVIRONMENT'),
+        'currency' => env('MTN_CURRENCY'),
+        'party_id_type' => env('MTN_COLLECTION_PARTY_ID_TYPE','msisdn'),
+        'redirect_uri' => env('MTN_COLLECTION_REDIRECT_URI'),
+    ],
+
+    'airtel' => [
+        'base_url' => env('AIRTEL_API_URL'),
+        'client_id' => env('AIRTEL_CLIENT_ID'),
+        'client_secret' => env('AIRTEL_CLIENT_SECRET'),
     ],
 
 ];
