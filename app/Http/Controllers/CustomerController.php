@@ -207,7 +207,8 @@ class CustomerController extends Controller
         Cache::forget('package_revenue_data'); // Clear package revenue cache
         Cache::forget('location_revenue_data'); // Clear location revenue cache needs to be updated to site_revenue_data?
 
-        $is_success = 1;
+        if(config('app.debug'))
+            $is_success = 1;
 
         if($is_success== 1){
 
