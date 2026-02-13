@@ -23,8 +23,16 @@ class Transaction extends Model
         'site_fee',
         'total_fee',
         'total_amount',
-        'fee_distributed'
+        'fee_distributed',
+        'settlement_request_id',
+        'customer_fee',
+        'site_fee',
     ];
+
+    public function settlementRequest()
+    {
+        return $this->belongsTo(SettlementRequest::class);
+    }
 
     public function voucher()
     {

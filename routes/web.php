@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SiteController;
+use App\Http\Controllers\SettlementController;
 use App\Services\SMSService;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\SendWhatsAppJob;
@@ -57,7 +58,15 @@ Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent'], '
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.deleteUser');
 
     Route::get('/reports', [AdminController::class, 'showReports'])->name('admin.reports');
-    Route::get('/transactions', [AdminController::class, 'showTransactions'])->name('admin.transactions'); // Added transactions route
+    Route::get('/transactions', [AdminController::class, 'showTransactions'])->name('admin.transactions'); 
+    Route::get('/collections', [AdminController::class, 'showCollections'])->name('admin.collections');
+
+    // Settlements
+    Route::get('/settlements', [SettlementController::class, 'index'])->name('admin.settlements.index');
+    Route::get('/settlements/create', [SettlementController::class, 'create'])->name('admin.settlements.create');
+    Route::post('/settlements', [SettlementController::class, 'store'])->name('admin.settlements.store');
+    Route::post('/settlements/{settlement}/approve', [SettlementController::class, 'approve'])->name('admin.settlements.approve');
+
     Route::get('/reconciliation', [AdminController::class, 'showReconciliation'])->name('admin.reconciliation');
     Route::post('/reconcile', [AdminController::class, 'reconcileCash'])->name('admin.reconcile');
     Route::get('/settings', [AdminController::class, 'showSettings'])->name('admin.settings');

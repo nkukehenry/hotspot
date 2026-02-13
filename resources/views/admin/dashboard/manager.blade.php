@@ -23,13 +23,35 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-4 rounded-xl shadow-lg border-none">
             <p class="text-[9px] font-black text-blue-100 uppercase tracking-widest mb-1">Current Balance</p>
             <p class="text-2xl font-black text-white">{{ number_format($stats['site_revenue']) }} <span class="text-xs font-normal opacity-70">UGX</span></p>
             <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-white/80">
                 <span>Total Accumulated</span>
                 <i class="fas fa-wallet bg-white/20 p-1.5 rounded-lg"></i>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Digital Sales</p>
+            <p class="text-xl font-black text-blue-600">{{ number_format($stats['digital_revenue']) }}</p>
+            <div class="mt-3 flex flex-col gap-0.5 text-[9px] font-bold text-gray-500 box-border">
+                <div class="flex justify-between w-full">
+                    <span>Fees:</span>
+                    <span class="text-gray-700 dark:text-gray-300">{{ number_format($stats['digital_site_fee']) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Cash Sales</p>
+            <p class="text-xl font-black text-green-600">{{ number_format($stats['cash_revenue']) }}</p>
+            <div class="mt-3 flex flex-col gap-0.5 text-[9px] font-bold text-gray-500 box-border">
+                <div class="flex justify-between w-full">
+                    <span>Fees:</span>
+                    <span class="text-gray-700 dark:text-gray-300">{{ number_format($stats['cash_site_fee']) }}</span>
+                </div>
             </div>
         </div>
 

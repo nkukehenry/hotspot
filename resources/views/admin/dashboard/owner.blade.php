@@ -52,18 +52,32 @@
         </div>
 
         <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Stock</p>
-            <p class="text-xl font-black text-orange-600">{{ number_format($stats['active_vouchers']) }}</p>
-            <div class="mt-3 flex items-center text-[9px] font-bold text-orange-500">
-                <i class="fas fa-exclamation-triangle mr-1"></i> Low stock
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Digital Sales</p>
+            <p class="text-xl font-black text-blue-600">{{ number_format($stats['digital_revenue']) }}</p>
+            <div class="mt-3 flex flex-col gap-0.5 text-[9px] font-bold text-gray-500 box-border">
+                <div class="flex justify-between w-full">
+                    <span>Customer Fee:</span>
+                    <span class="text-gray-700 dark:text-gray-300">{{ number_format($stats['digital_customer_fee']) }}</span>
+                </div>
+                <div class="flex justify-between w-full">
+                    <span>Site Fee:</span>
+                    <span class="text-gray-700 dark:text-gray-300">{{ number_format($stats['digital_site_fee']) }}</span>
+                </div>
             </div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">ATV</p>
-            <p class="text-xl font-black text-purple-600">{{ number_format($stats['avg_transaction']) }}</p>
-            <div class="mt-3 flex items-center text-[9px] font-bold text-purple-500">
-                <i class="fas fa-wallet mr-1"></i> Per tx
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Cash Sales</p>
+            <p class="text-xl font-black text-green-600">{{ number_format($stats['cash_revenue']) }}</p>
+            <div class="mt-3 flex flex-col gap-0.5 text-[9px] font-bold text-gray-500 box-border">
+                 <div class="flex justify-between w-full">
+                    <span>Customer Fee:</span>
+                    <span class="text-gray-700 dark:text-gray-300">{{ number_format($stats['cash_customer_fee']) }}</span>
+                </div>
+                <div class="flex justify-between w-full">
+                    <span>Site Fee:</span>
+                    <span class="text-gray-700 dark:text-gray-300">{{ number_format($stats['cash_site_fee']) }}</span>
+                </div>
             </div>
         </div>
     </div>

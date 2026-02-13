@@ -195,6 +195,20 @@
                                 History</a>
                         </li>
                         @endcan
+                        @can('view_reports')
+                        <li>
+                            <a href="{{ route('admin.collections') }}"
+                                class="flex items-center w-full p-2 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 {{ request()->routeIs('admin.collections*') ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-900' }}">Collections
+                                Report</a>
+                        </li>
+                        @endcan
+                        @canany(['manage_sites', 'view_reports'])
+                        <li>
+                            <a href="{{ route('admin.settlements.index') }}"
+                                class="flex items-center w-full p-2 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 {{ request()->routeIs('admin.settlements*') ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-900' }}">Settlements
+                                & Balances</a>
+                        </li>
+                        @endcanany
                     </ul>
                 </li>
                 @endcanany

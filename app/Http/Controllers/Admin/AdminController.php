@@ -42,6 +42,15 @@ class AdminController extends Controller
                 'total_sites' => Site::count(),
                 'recent_transactions' => (clone $baseQuery)->with(['site', 'agent'])->latest()->take(5)->get(),
                 'avg_transaction' => (clone $baseQuery)->count() > 0 ? (clone $baseQuery)->sum('amount') / (clone $baseQuery)->count() : 0,
+                
+                // Detailed Breakdown
+                'digital_revenue' => (clone $baseQuery)->whereNull('agent_id')->sum('amount'),
+                'digital_customer_fee' => (clone $baseQuery)->whereNull('agent_id')->sum('customer_fee'),
+                'digital_site_fee' => (clone $baseQuery)->whereNull('agent_id')->sum('site_fee'),
+
+                'cash_revenue' => (clone $baseQuery)->whereNotNull('agent_id')->sum('amount'),
+                'cash_customer_fee' => (clone $baseQuery)->whereNotNull('agent_id')->sum('customer_fee'),
+                'cash_site_fee' => (clone $baseQuery)->whereNotNull('agent_id')->sum('site_fee'),
             ];
 
             $sitePerformance = DB::table('transactions')
@@ -73,6 +82,15 @@ class AdminController extends Controller
                 'available_vouchers' => Voucher::where('site_id', $siteId)->where('is_used', false)->count(),
                 'total_agents' => User::role('Agent')->where('site_id', $siteId)->count(),
                 'recent_sales' => (clone $baseQuery)->latest()->take(5)->get(),
+
+                // Detailed Breakdown
+                'digital_revenue' => (clone $baseQuery)->whereNull('agent_id')->sum('amount'),
+                'digital_customer_fee' => (clone $baseQuery)->whereNull('agent_id')->sum('customer_fee'),
+                'digital_site_fee' => (clone $baseQuery)->whereNull('agent_id')->sum('site_fee'),
+
+                'cash_revenue' => (clone $baseQuery)->whereNotNull('agent_id')->sum('amount'),
+                'cash_customer_fee' => (clone $baseQuery)->whereNotNull('agent_id')->sum('customer_fee'),
+                'cash_site_fee' => (clone $baseQuery)->whereNotNull('agent_id')->sum('site_fee'),
             ];
 
             $agentPerformance = DB::table('transactions')
@@ -564,5 +582,50 @@ class AdminController extends Controller
 
             return back()->with('success', "Successfully reconciled " . number_format($amount) . " from {$agent->name}.");
         });
+    }
+
+    public function showCollections(Request $request)
+    {
+        if (!Auth::user()->canany(['view_reports', 'view_transactions'])) {
+            abort(403);
+        }
+
+        $user = Auth::user();
+        if ($user->site_id) {
+            $sites = Site::where('id', $user->site_id)->get();
+        } else {
+            $sites = Site::all();
+        }
+
+        $query = Transaction::query()
+            ->with(['site', 'package', 'agent'])
+            ->when($user->site_id, function ($q) use ($user) {
+                return $q->where('site_id', $user->site_id);
+            })
+            ->when($request->site_id, function ($q) use ($request) {
+                return $q->where('site_id', $request->site_id);
+            })
+            ->when($request->date_from, function ($q) use ($request) {
+                return $q->whereDate('created_at', '>=', $request->date_from);
+            })
+            ->when($request->date_to, function ($q) use ($request) {
+                return $q->whereDate('created_at', '<=', $request->date_to);
+            })
+            ->when($request->type, function ($q) use ($request) {
+                if ($request->type === 'digital') {
+                    return $q->whereNull('agent_id');
+                } elseif ($request->type === 'agent') {
+                    return $q->whereNotNull('agent_id');
+                }
+            });
+
+        // Calculate summaries
+        $totalRevenue = (clone $query)->sum('amount');
+        $digitalRevenue = (clone $query)->whereNull('agent_id')->sum('amount');
+        $agentRevenue = (clone $query)->whereNotNull('agent_id')->sum('amount');
+
+        $transactions = $query->latest()->paginate(15)->withQueryString();
+
+        return view('admin.collections', compact('transactions', 'sites', 'totalRevenue', 'digitalRevenue', 'agentRevenue'));
     }
 }

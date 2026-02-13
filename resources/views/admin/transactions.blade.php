@@ -65,6 +65,8 @@
                          <th class="py-2 px-3 text-left">Mobile Number</th>
                          <th class="py-2 px-3 text-left">Voucher Code</th>
                          <th class="py-2 px-3 text-left">Package</th>
+                         <th class="py-2 px-3 text-right">C. Fee</th>
+                         <th class="py-2 px-3 text-right">M. Fee</th>
                          <th class="py-2 px-3 text-left">Amount</th>
                          <th class="py-2 px-3 text-left">Status</th>
                     </tr>
@@ -98,7 +100,17 @@
                                 </p>
                             </td>
                             <td class="py-2 px-3 text-left whitespace-nowrap">
-                                <p class="text-xs font-black text-gray-900 dark:text-white">
+                                <p class="text-xs text-red-500 text-right">
+                                    {{ number_format($transaction->customer_fee) }}
+                                </p>
+                            </td>
+                            <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs text-orange-500 text-right">
+                                    {{ number_format($transaction->site_fee) }}
+                                </p>
+                            </td>
+                            <td class="py-2 px-3 text-left whitespace-nowrap">
+                                <p class="text-xs font-black text-gray-900 dark:text-white bg-green-50 dark:bg-green-900/10 px-2 py-1 rounded">
                                     {{ number_format($transaction->amount) }}
                                 </p>
                             </td>

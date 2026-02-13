@@ -23,8 +23,15 @@ class Site extends Model
         'site_fee_percent',
         'logo',
         'contact_email',
-        'contact_phone'
+        'contact_phone',
+        'settlement_momo_number',
+        'settlement_account_name'
     ];
+
+    public function settlementRequests()
+    {
+        return $this->hasMany(SettlementRequest::class);
+    }
 
     protected static function boot()
     {

@@ -178,6 +178,20 @@
                                             </div>
                                             
                                             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
+                                                <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Settlement Configuration</div>
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label for="edit_settlement_momo_{{ $site->id }}" class="block text-[8px] font-black uppercase text-gray-400 mb-1">MoMo Number</label>
+                                                        <input type="text" id="edit_settlement_momo_{{ $site->id }}" name="settlement_momo_number" value="{{ $site->settlement_momo_number }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label for="edit_settlement_name_{{ $site->id }}" class="block text-[8px] font-black uppercase text-gray-400 mb-1">Account Name</label>
+                                                        <input type="text" id="edit_settlement_name_{{ $site->id }}" name="settlement_account_name" value="{{ $site->settlement_account_name }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
                                                 <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fee Configuration</div>
                                                 <div class="grid grid-cols-2 gap-3">
                                                     <div>
@@ -300,6 +314,20 @@
                                     <label for="add_contact_phone" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Contact Phone</label>
                                     <input type="text" id="add_contact_phone" name="contact_phone"
                                         class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
+                                <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Settlement Configuration</div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label for="add_settlement_momo" class="block text-[8px] font-black uppercase text-gray-400 mb-1">MoMo Number</label>
+                                        <input type="text" id="add_settlement_momo" name="settlement_momo_number" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label for="add_settlement_name" class="block text-[8px] font-black uppercase text-gray-400 mb-1">Account Name</label>
+                                        <input type="text" id="add_settlement_name" name="settlement_account_name" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
+                                    </div>
                                 </div>
                             </div>
 
