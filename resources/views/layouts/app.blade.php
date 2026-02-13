@@ -143,6 +143,11 @@
                 <a href="{{ url('/admin') }}" class="hover:underline">Login</a>
             </li>
             @endguest
+            @auth
+            <li>
+                <a href="{{ route('admin.dashboard') }}" class="hover:underline">Dashboard</a>
+            </li>
+            @endauth
         </ul>
     </footer>
 
