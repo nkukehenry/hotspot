@@ -99,22 +99,22 @@
                                         <div class="mb-3">
                                             <label for="name" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Name</label>
                                             <input type="text" id="name" name="name" value="{{ $package->name }}"
-                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="cost" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Cost (UGX)</label>
                                             <input type="number" step="1" id="cost" name="cost" value="{{ $package->cost }}"
-                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="description" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Description</label>
                                             <textarea id="description" name="description" rows="2"
-                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>{{ $package->description }}</textarea>
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>{{ $package->description }}</textarea>
                                         </div>
                                         <div class="mb-4">
                                             <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
                                             <select id="site_id" name="site_id"
-                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>
                                                 @foreach ($sites as $site)
                                                     <option value="{{ $site->id }}" {{ $package->site_id == $site->id ? 'selected' : '' }}>
                                                         {{ $site->name }}
@@ -206,22 +206,22 @@
                             <div class="mb-3">
                                 <label for="add_name" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Name</label>
                                 <input type="text" id="add_name" name="name"
-                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>
                             </div>
                             <div class="mb-3">
                                 <label for="add_cost" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Cost (UGX)</label>
                                 <input type="number" step="1" id="add_cost" name="cost"
-                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>
                             </div>
                             <div class="mb-3">
                                 <label for="add_description" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Description</label>
                                 <textarea id="add_description" name="description" rows="2"
-                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm></textarea>
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required></textarea>
                             </div>
                             <div class="mb-4">
                                 <label for="add_site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
                                 <select id="add_site_id" name="site_id"
-                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm" required>
                                     @foreach ($sites as $site)
                                         <option value="{{ $site->id }}">{{ $site->name }}</option>
                                     @endforeach
