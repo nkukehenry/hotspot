@@ -20,12 +20,14 @@ class VoucherSeeder extends Seeder
         Voucher::create([
             'code' => 'VOUCHER1234',
             'package_id' => $basicPackage->id,
+            'site_id' => $basicPackage->site_id,
             'is_used' => false,
         ]);
 
         Voucher::create([
             'code' => 'VOUCHER5678',
             'package_id' => $premiumPackage->id,
+            'site_id' => $premiumPackage->site_id,
             'is_used' => false,
         ]);
     }
