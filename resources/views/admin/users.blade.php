@@ -23,6 +23,7 @@
                         <th class="py-2 px-3 text-left">Name</th>
                         <th class="py-2 px-3 text-left">Email</th>
                         <th class="py-2 px-3 text-left">Role</th>
+                        <th class="py-2 px-3 text-left">Company</th>
                         <th class="py-2 px-3 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -36,11 +37,19 @@
                                 {{ $user->roles->pluck('name')->join(', ') }}
                             </span>
                         </td>
+                        <td class="py-2 px-3 text-[10px] font-black uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {{ $user->company->name ?? '---' }}
+                        </td>
                         <td class="py-2 px-3 text-right whitespace-nowrap">
-                            @can('edit_users')
+                             @can('edit_users')
                             <button data-modal-target="edit-modal-{{ $user->id }}"
                                 data-modal-toggle="edit-modal-{{ $user->id }}"
                                 class="text-xs font-black uppercase text-blue-600 hover:text-blue-800 px-2 py-1 transition">Edit</button>
+                            
+                            <form action="{{ route('admin.users.reset-password', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to reset this user\'s password?')">
+                                @csrf
+                                <button type="submit" class="text-xs font-black uppercase text-amber-600 hover:text-amber-800 px-2 py-1 transition">Reset Pass</button>
+                            </form>
                             @endcan
                             @can('delete_users')
                             <button data-modal-target="delete-modal-{{ $user->id }}"
@@ -84,6 +93,11 @@
                                             <label for="edit_email_{{ $user->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Email</label>
                                             <input type="email" id="edit_email_{{ $user->id }}" name="email" value="{{ $user->email }}"
                                                 class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="edit_password_{{ $user->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">New Password (Leave blank to keep current)</label>
+                                            <input type="password" id="edit_password_{{ $user->id }}" name="password" placeholder="••••••••"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
                                         </div>
                                         <button type="submit"
                                             class="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
@@ -172,33 +186,60 @@
                                 <input type="email" id="add_email" name="email"
                                     class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
                             </div>
+                             <div class="mb-3">
+                                <label for="add_password" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Password</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="add_password" name="password" placeholder="Leave blank to auto-generate"
+                                        class="flex-1 bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block p-2" shadow-sm>
+                                    <button type="button" onclick="generatePassword()"
+                                        class="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-black uppercase px-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
                             <div class="mb-3">
                                 <label for="add_role" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Role</label>
                                 <select id="add_role" name="role"
                                     class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
                                     @role('Owner')
                                         <option value="Owner">Platform Owner</option>
-                                        <option value="Manager">Site Manager</option>
+                                        <option value="Company Admin">Company Administrator</option>
                                     @endrole
-                                    @hasanyrole('Owner|Manager')
+                                    
+                                    @hasanyrole('Owner|Company Admin')
+                                        <option value="Manager">Site Manager</option>
                                         <option value="Supervisor">Site Supervisor</option>
                                     @endhasanyrole
+
                                     <option value="Agent">Sales Agent</option>
                                 </select>
                             </div>
 
                             @role('Owner')
+                            <div class="mb-3">
+                                <label for="add_company_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
+                                <select id="add_company_id" name="company_id"
+                                    class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                    <option value="">None (Platform Level)</option>
+                                    @foreach($companies as $company)
+                                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endrole
+
+                            @hasanyrole('Owner|Company Admin')
                             <div class="mb-4">
                                 <label for="add_site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
                                 <select id="add_site_id" name="site_id"
                                     class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
-                                    <option value="">None (Platform Level)</option>
+                                    <option value="">None (Platform/Company Level)</option>
                                     @foreach($sites as $site)
                                         <option value="{{ $site->id }}">{{ $site->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            @endrole
+                            @endhasanyrole
                             <button type="submit"
                                 class="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
                                 Create User
@@ -209,4 +250,15 @@
             </div>
         </div>
     </div>
+<script>
+    function generatePassword() {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+        let retVal = "";
+        for (let i = 0; i < 12; ++i) {
+            retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+        }
+        document.getElementById("add_password").value = retVal;
+        document.getElementById("add_password").type = "text";
+    }
+</script>
 @endsection

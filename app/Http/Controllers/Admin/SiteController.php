@@ -5,13 +5,28 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Site;
+use Illuminate\Support\Facades\Auth;
 
 class SiteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sites = Site::paginate(10);
-        return view('admin.sites', compact('sites'));
+        $query = Site::with('company');
+
+        if (Auth::user()->hasRole('Company Admin')) {
+            $query->where('company_id', Auth::user()->company_id);
+        } elseif ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('address', 'like', '%' . $request->search . '%');
+        }
+
+        $sites = $query->paginate(10)->withQueryString();
+        $companies = Auth::user()->hasRole('Owner') ? \App\Models\Company::all() : [];
+        return view('admin.sites', compact('sites', 'companies'));
     }
 
     public function store(Request $request)
@@ -19,6 +34,7 @@ class SiteController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'company_id' => 'nullable|exists:companies,id',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'contact_email' => 'nullable|email',
             'contact_phone' => 'nullable|string',
@@ -42,6 +58,7 @@ class SiteController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
+            'company_id' => 'nullable|exists:companies,id',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'contact_email' => 'nullable|email',
             'contact_phone' => 'nullable|string',

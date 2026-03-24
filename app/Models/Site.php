@@ -25,8 +25,14 @@ class Site extends Model
         'contact_email',
         'contact_phone',
         'settlement_momo_number',
-        'settlement_account_name'
+        'settlement_account_name',
+        'company_id'
     ];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     public function settlementRequests()
     {

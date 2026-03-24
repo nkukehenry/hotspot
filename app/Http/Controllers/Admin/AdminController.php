@@ -35,11 +35,23 @@ class AdminController extends Controller
         if ($user->can('view_owner_dashboard')) {
             $baseQuery = Transaction::whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
             
+            if ($user->hasRole('Company Admin')) {
+                $baseQuery->whereHas('site', function($q) use ($user) {
+                    $q->where('company_id', $user->company_id);
+                });
+            }
+
             $stats = [
                 'total_revenue' => (clone $baseQuery)->sum('amount'),
-                'total_vouchers' => Voucher::count(),
-                'active_vouchers' => Voucher::where('is_used', false)->count(),
-                'total_sites' => Site::count(),
+                'total_vouchers' => $user->hasRole('Company Admin') 
+                    ? Voucher::whereHas('package', fn($q) => $q->whereHas('site', fn($sq) => $sq->where('company_id', $user->company_id)))->count()
+                    : Voucher::count(),
+                'active_vouchers' => $user->hasRole('Company Admin')
+                    ? Voucher::where('is_used', false)->whereHas('package', fn($q) => $q->whereHas('site', fn($sq) => $sq->where('company_id', $user->company_id)))->count()
+                    : Voucher::where('is_used', false)->count(),
+                'total_sites' => $user->hasRole('Company Admin') 
+                    ? Site::where('company_id', $user->company_id)->count() 
+                    : Site::count(),
                 'recent_transactions' => (clone $baseQuery)->with(['site', 'agent'])->latest()->take(5)->get(),
                 'avg_transaction' => (clone $baseQuery)->count() > 0 ? (clone $baseQuery)->sum('amount') / (clone $baseQuery)->count() : 0,
                 
@@ -53,20 +65,35 @@ class AdminController extends Controller
                 'cash_site_fee' => (clone $baseQuery)->whereNotNull('agent_id')->sum('site_fee'),
             ];
 
-            $sitePerformance = DB::table('transactions')
+            $sitePerformanceQuery = DB::table('transactions')
                 ->join('sites', 'transactions.site_id', '=', 'sites.id')
                 ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
                 ->select('sites.name', DB::raw('sum(amount) as revenue'), DB::raw('count(transactions.id) as sales_count'))
-                ->groupBy('sites.id', 'sites.name')
-                ->get();
+                ->groupBy('sites.id', 'sites.name');
 
-            // Monthly Trend for Chart
-            $trendData = DB::table('transactions')
+            if ($user->hasRole('Company Admin')) {
+                $sitePerformanceQuery->where('sites.company_id', $user->company_id);
+            }
+
+            $sitePerformance = $sitePerformanceQuery->get();
+
+            // Trend Data for Chart
+            $trendQuery = DB::table('transactions')
                 ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d') as date"), DB::raw('sum(amount) as revenue'))
                 ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
                 ->groupBy('date')
-                ->orderBy('date')
-                ->get();
+                ->orderBy('date');
+
+            if ($user->hasRole('Company Admin')) {
+                $trendQuery->whereExists(function($q) use ($user) {
+                    $q->select(DB::raw(1))
+                      ->from('sites')
+                      ->whereRaw('sites.id = transactions.site_id')
+                      ->where('sites.company_id', $user->company_id);
+                });
+            }
+
+            $trendData = $trendQuery->get();
 
             return view('admin.dashboard.owner', compact('stats', 'sitePerformance', 'trendData', 'dateFrom', 'dateTo'));
         }
@@ -128,6 +155,7 @@ class AdminController extends Controller
         $dateTo = $request->input('date_to');
         $siteId = $request->input('site_id');
         $packageId = $request->input('package_id');
+        $companyId = $request->input('company_id');
 
         // RBAC Scoping
         if ($user->site_id) {
@@ -139,7 +167,9 @@ class AdminController extends Controller
             ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
             ->join('packages', 'vouchers.package_id', '=', 'packages.id')
             ->join('sites', 'packages.site_id', '=', 'sites.id')
+            ->when($user->hasRole('Company Admin'), fn($q) => $q->where('sites.company_id', $user->company_id))
             ->when($siteId, fn($q) => $q->where('sites.id', $siteId))
+            ->when($companyId, fn($q) => $q->where('sites.company_id', $companyId))
             ->when($packageId, fn($q) => $q->where('packages.id', $packageId))
             ->when($dateFrom, fn($q) => $q->whereDate('transactions.created_at', '>=', $dateFrom))
             ->when($dateTo, fn($q) => $q->whereDate('transactions.created_at', '<=', $dateTo));
@@ -186,13 +216,28 @@ class AdminController extends Controller
             ->get();
 
         // Dropdowns
-        $packages = $user->site_id ? Package::where('site_id', $user->site_id)->get() : Package::all();
-        $sites = $user->site_id ? Site::where('id', $user->site_id)->get() : Site::all();
+        $packagesQuery = Package::query();
+        $sitesQuery = Site::query();
+        $companies = [];
+
+        if ($user->hasRole('Company Admin')) {
+            $packagesQuery->whereHas('site', fn($q) => $q->where('company_id', $user->company_id));
+            $sitesQuery->where('company_id', $user->company_id);
+        } elseif ($user->site_id) {
+            $packagesQuery->where('site_id', $user->site_id);
+            $sitesQuery->where('id', $user->site_id);
+        } else {
+            $companies = \App\Models\Company::all();
+        }
+
+        $packages = $packagesQuery->get();
+        $sites = $sitesQuery->get();
 
         return view('admin.reports', compact(
             'salesData',
             'packages',
             'sites',
+            'companies',
             'packageRevenueData',
             'siteRevenueData',
             'summary',
@@ -481,6 +526,16 @@ class AdminController extends Controller
         $query = Transaction::with(['site', 'voucher.package']);
 
         // Apply Filters
+        if ($user->hasRole('Company Admin')) {
+            $query->whereHas('site', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        } elseif ($request->filled('company_id')) {
+            $query->whereHas('site', function ($q) use ($request) {
+                $q->where('company_id', $request->company_id);
+            });
+        }
+
         if ($request->filled('site_id')) {
             $query->where('site_id', $request->site_id);
         }
@@ -512,9 +567,10 @@ class AdminController extends Controller
             $query->where('agent_id', $user->id);
         }
 
-        $transactions = $query->latest()->paginate(20);
+        $transactions = $query->latest()->paginate(20)->withQueryString();
+        $companies = $user->hasRole('Owner') ? \App\Models\Company::all() : [];
 
-        return view('admin.transactions', compact('transactions', 'sites', 'packages'));
+        return view('admin.transactions', compact('transactions', 'sites', 'packages', 'companies'));
     }
 
     public function showReconciliation()
@@ -591,16 +647,29 @@ class AdminController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->site_id) {
+        if ($user->hasRole('Company Admin')) {
+            $sites = Site::where('company_id', $user->company_id)->get();
+        } elseif ($user->site_id) {
             $sites = Site::where('id', $user->site_id)->get();
         } else {
             $sites = Site::all();
         }
 
+        // Determine active site ID (either manager's site or selected filter)
+        $activeSiteId = $user->site_id ?? $request->site_id;
+        $agents = $activeSiteId ? User::role('Agent')->where('site_id', $activeSiteId)->get() : collect();
+
         $query = Transaction::query()
             ->with(['site', 'package', 'agent'])
-            ->when($user->site_id, function ($q) use ($user) {
-                return $q->where('site_id', $user->site_id);
+            ->when($user->hasRole('Company Admin'), function ($q) use ($user) {
+                return $q->whereHas('site', function ($sq) use ($user) {
+                    $sq->where('company_id', $user->company_id);
+                });
+            })
+            ->when($request->company_id && $user->hasRole('Owner'), function ($q) use ($request) {
+                return $q->whereHas('site', function ($sq) use ($request) {
+                    $sq->where('company_id', $request->company_id);
+                });
             })
             ->when($request->site_id, function ($q) use ($request) {
                 return $q->where('site_id', $request->site_id);
@@ -610,6 +679,9 @@ class AdminController extends Controller
             })
             ->when($request->date_to, function ($q) use ($request) {
                 return $q->whereDate('created_at', '<=', $request->date_to);
+            })
+            ->when($request->agent_id, function ($q) use ($request) {
+                return $q->where('agent_id', $request->agent_id);
             })
             ->when($request->type, function ($q) use ($request) {
                 if ($request->type === 'digital') {
@@ -623,9 +695,18 @@ class AdminController extends Controller
         $totalRevenue = (clone $query)->sum('amount');
         $digitalRevenue = (clone $query)->whereNull('agent_id')->sum('amount');
         $agentRevenue = (clone $query)->whereNotNull('agent_id')->sum('amount');
+        
+        // Fee Lists for Footer
+        $totalCustomerFee = (clone $query)->sum('customer_fee');
+        $totalSiteFee = (clone $query)->sum('site_fee');
 
         $transactions = $query->latest()->paginate(15)->withQueryString();
+        $companies = $user->hasRole('Owner') ? \App\Models\Company::all() : [];
 
-        return view('admin.collections', compact('transactions', 'sites', 'totalRevenue', 'digitalRevenue', 'agentRevenue'));
+        return view('admin.collections', compact(
+            'transactions', 'sites', 'agents', 'companies',
+            'totalRevenue', 'digitalRevenue', 'agentRevenue', 
+            'totalCustomerFee', 'totalSiteFee'
+        ));
     }
 }

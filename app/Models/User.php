@@ -23,12 +23,12 @@ class User extends Authenticatable
         'email',
         'password',
         'site_id',
+        'company_id',
+        'must_change_password',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -42,10 +42,16 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'must_change_password' => 'boolean',
     ];
 
     public function site()
     {
         return $this->belongsTo(Site::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 }

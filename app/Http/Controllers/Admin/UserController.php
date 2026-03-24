@@ -19,20 +19,27 @@ class UserController extends Controller
         }
 
         $user = Auth::user();
-        $query = User::with('roles');
+        $query = User::with('roles', 'company');
 
-        if ($user->site_id) {
+        // Multi-tenancy filtering
+        if ($user->hasRole('Company Admin')) {
+            $query->where('company_id', $user->company_id);
+        } elseif ($user->site_id) {
             $query->where('site_id', $user->site_id);
         }
 
         $users = $query->paginate();
         
         $sites = [];
+        $companies = [];
         if ($user->hasRole('Owner')) {
             $sites = \App\Models\Site::all();
+            $companies = \App\Models\Company::all();
+        } elseif ($user->hasRole('Company Admin')) {
+            $sites = \App\Models\Site::where('company_id', $user->company_id)->get();
         }
 
-        return view('admin.users', compact('users', 'sites'));
+        return view('admin.users', compact('users', 'sites', 'companies'));
     }
 
     public function store(Request $request)
@@ -43,42 +50,85 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'role' => ['required', 'string', Rule::in(['Owner', 'Manager', 'Supervisor', 'Agent'])],
+            'role' => ['required', 'string', Rule::in(['Owner', 'Manager', 'Supervisor', 'Agent', 'Company Admin'])],
             'site_id' => 'nullable|exists:sites,id',
+            'company_id' => 'nullable|exists:companies,id',
+            'password' => 'nullable|string|min:8',
         ]);
 
-        // Authorization & Site Assignment
+        // Authorization & Assignment logic
         $siteId = null;
+        $companyId = null;
+
         if ($creator->hasRole('Owner')) {
-            $siteId = $request->site_id; // Owner can assign any site (or null for platform users)
-        } else {
-            // Manager/Supervisor must assign to their own site
-            $siteId = $creator->site_id;
+            $siteId = $request->site_id;
+            $companyId = $request->company_id;
+        } elseif ($creator->hasRole('Company Admin')) {
+            $companyId = $creator->company_id;
+            $siteId = $request->site_id;
             
-            // Prevent Manager/Supervisor from creating Owners or Managers (optional strictness)
-            if ($request->role === 'Owner' || ($request->role === 'Manager' && !$creator->hasRole('Owner'))) { // Only Owner can create Manager? Or Manager can create Manager? Usually Manager creates Supervisor/Agent.
-                 // Let's restrict: Manager -> Supervisor/Agent. Supervisor -> Agent.
-                 if ($creator->hasRole('Manager') && in_array($request->role, ['Owner', 'Manager'])) {
-                     return redirect()->back()->with('error', 'Managers can only create Supervisors and Agents.');
-                 }
-                 if ($creator->hasRole('Supervisor') && in_array($request->role, ['Owner', 'Manager', 'Supervisor'])) {
-                     return redirect()->back()->with('error', 'Supervisors can only create Agents.');
-                 }
+            if ($siteId) {
+                $site = \App\Models\Site::find($siteId);
+                if (!$site || $site->company_id != $companyId) {
+                    return redirect()->back()->with('error', 'Unauthorized site assignment.');
+                }
             }
+
+            if (in_array($request->role, ['Owner', 'Company Admin'])) {
+                return redirect()->back()->with('error', 'Unauthorized role assignment.');
+            }
+        } elseif ($creator->hasRole('Manager') || $creator->hasRole('Supervisor')) {
+            $siteId = $creator->site_id;
+            $companyId = $creator->company_id;
+            
+            if ($request->role !== 'Agent') {
+                return redirect()->back()->with('error', 'Managers and Supervisors can only create Agents.');
+            }
+        } else {
+            return redirect()->back()->with('error', 'Unauthorized to create users.');
         }
+
+        // Handle Password
+        $password = $request->input('password') ?: \Illuminate\Support\Str::random(10);
 
         // Create a new user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make('password'), // Set a default password or handle it as needed
+            'password' => Hash::make($password),
             'site_id' => $siteId,
+            'company_id' => $companyId,
+            'must_change_password' => true,
         ]);
         
         $user->assignRole($request->role);
 
-        // Redirect back with a success message
-        return redirect()->route('admin.users')->with('success', 'User added successfully.');
+        return redirect()->route('admin.users')->with('success', "User added successfully. Temporary password: {$password}");
+    }
+
+    public function resetPassword(User $user)
+    {
+        if (!Auth::user()->can('edit_users')) {
+            abort(403);
+        }
+
+        $creator = Auth::user();
+        if ($creator->hasRole('Company Admin') && $user->company_id != $creator->company_id) {
+            abort(403, 'Unauthorized company access.');
+        }
+
+        if ($creator->site_id && $user->site_id != $creator->site_id) {
+            abort(403, 'Unauthorized site access.');
+        }
+
+        $newPassword = \Illuminate\Support\Str::random(10);
+        
+        $user->update([
+            'password' => Hash::make($newPassword),
+            'must_change_password' => true
+        ]);
+
+        return redirect()->back()->with('success', "Password reset successfully. New temporary password: {$newPassword}");
     }
 
     public function update(Request $request, User $user)
@@ -89,7 +139,11 @@ class UserController extends Controller
 
         $creator = Auth::user();
 
-        // Privilege Check: Manager/Supervisor can only edit users from their own site
+        // Privilege Check
+        if ($creator->hasRole('Company Admin') && $user->company_id != $creator->company_id) {
+            abort(403, 'Unauthorized company access.');
+        }
+
         if ($creator->site_id && $user->site_id != $creator->site_id) {
             abort(403, 'Unauthorized site access.');
         }
@@ -97,28 +151,58 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['nullable', 'string', Rule::in(['Owner', 'Manager', 'Supervisor', 'Agent'])],
+            'role' => ['nullable', 'string', Rule::in(['Owner', 'Manager', 'Supervisor', 'Agent', 'Company Admin'])],
             'site_id' => 'nullable|exists:sites,id',
+            'company_id' => 'nullable|exists:companies,id',
+            'password' => 'nullable|string|min:8',
         ]);
 
-        $user->update([
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-        ]);
+        ];
 
-        if ($request->filled('role')) {
-             // Respect hierarchy during role change
-             if (!$creator->hasRole('Owner')) {
-                 if ($request->role === 'Owner' || ($request->role === 'Manager' && !$creator->hasRole('Owner'))) {
-                      return redirect()->back()->with('error', 'Unauthorized role assignment.');
-                 }
-             }
-             $user->syncRoles([$request->role]);
+        if ($request->filled('password')) {
+            $updateData['password'] = Hash::make($request->password);
         }
 
-        if ($creator->hasRole('Owner') && $request->has('site_id')) {
-            $user->site_id = $request->site_id;
+        $user->update($updateData);
+
+        if ($request->filled('role')) {
+             if ($creator->hasRole('Owner')) {
+                 $user->syncRoles([$request->role]);
+             } elseif ($creator->hasRole('Company Admin')) {
+                 if (!in_array($request->role, ['Owner', 'Company Admin'])) {
+                     $user->syncRoles([$request->role]);
+                 } else {
+                     return redirect()->back()->with('error', 'Unauthorized role assignment.');
+                 }
+             } elseif (($creator->hasRole('Manager') || $creator->hasRole('Supervisor')) && $request->role === 'Agent') {
+                 $user->syncRoles(['Agent']);
+             } else {
+                 return redirect()->back()->with('error', 'Unauthorized role assignment.');
+             }
+        }
+
+        if ($creator->hasRole('Owner')) {
+            if ($request->has('site_id')) $user->site_id = $request->site_id;
+            if ($request->has('company_id')) $user->company_id = $request->company_id;
             $user->save();
+        } elseif ($creator->hasRole('Company Admin')) {
+            if ($request->has('site_id')) {
+                $siteId = $request->site_id;
+                if ($siteId) {
+                    $site = \App\Models\Site::find($siteId);
+                    if ($site && $site->company_id == $creator->company_id) {
+                        $user->site_id = $siteId;
+                    } else {
+                        return redirect()->back()->with('error', 'Unauthorized site assignment.');
+                    }
+                } else {
+                    $user->site_id = null;
+                }
+                $user->save();
+            }
         }
 
         return redirect()->route('admin.users')->with('success', 'User updated successfully.');
@@ -132,7 +216,10 @@ class UserController extends Controller
 
         $creator = Auth::user();
 
-        // Hierarchy Check
+        if ($creator->hasRole('Company Admin') && $user->company_id != $creator->company_id) {
+            abort(403, 'Unauthorized company access.');
+        }
+
         if ($creator->site_id && $user->site_id != $creator->site_id) {
              abort(403, 'Cannot delete user from another site.');
         }

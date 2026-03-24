@@ -53,7 +53,7 @@
 
         <!-- Filter Form -->
         <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-            <form method="GET" action="{{ route('admin.collections') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+            <form method="GET" action="{{ route('admin.collections') }}" class="grid grid-cols-1 md:grid-cols-{{ !Auth::user()->site_id ? '6' : '5' }} gap-3 items-end">
                 <div>
                     <label for="date_from" class="block text-[9px] font-black uppercase text-gray-400 mb-1">From</label>
                     <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}"
@@ -67,8 +67,21 @@
                 
                 @if(!Auth::user()->site_id)
                 <div>
+                    <label for="company_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
+                    <select name="company_id" id="company_id" onchange="this.form.submit()"
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
+                        <option value="">All Companies</option>
+                        @foreach ($companies as $company)
+                            <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
+                                {{ $company->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
                     <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
-                    <select name="site_id" id="site_id"
+                    <select name="site_id" id="site_id" onchange="this.form.submit()"
                         class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                         <option value="">All Sites</option>
                         @foreach ($sites as $site)
@@ -87,6 +100,20 @@
                         <option value="">All Types</option>
                         <option value="digital" {{ request('type') == 'digital' ? 'selected' : '' }}>Digital Only</option>
                         <option value="agent" {{ request('type') == 'agent' ? 'selected' : '' }}>Agent Only</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="agent_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Agent</label>
+                    <select name="agent_id" id="agent_id"
+                        class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2"
+                        {{ $agents->isEmpty() ? 'disabled' : '' }}>
+                        <option value="">{{ $agents->isEmpty() ? 'Select Site First' : 'All Agents' }}</option>
+                        @foreach ($agents as $agent)
+                            <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
+                                {{ $agent->name }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -167,6 +194,14 @@
                             </tr>
                         @endforelse
                     </tbody>
+                    <tfoot class="bg-gray-100 dark:bg-gray-800 font-black text-xs text-gray-900 dark:text-white border-t-2 border-gray-200 dark:border-gray-600">
+                        <tr>
+                            <td colspan="{{ !Auth::user()->site_id ? '5' : '4' }}" class="py-3 px-3 text-right uppercase tracking-wider text-gray-500">Totals:</td>
+                            <td class="py-3 px-3 text-right text-red-600">{{ number_format($totalCustomerFee) }}</td>
+                            <td class="py-3 px-3 text-right text-orange-600">{{ number_format($totalSiteFee) }}</td>
+                            <td class="py-3 px-3 text-right text-black dark:text-white">UGX {{ number_format($totalRevenue) }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             <div class="p-4 border-t border-gray-100 dark:border-gray-700">

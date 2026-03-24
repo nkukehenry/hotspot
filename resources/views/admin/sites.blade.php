@@ -17,13 +17,30 @@
             </div>
         @endif
 
-        <!-- Add Site Button -->
-        @can('create_sites')
-        <button data-modal-target="add-site-modal" data-modal-toggle="add-site-modal"
-            class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-lg mb-4 shadow-sm transition">
-            <i class="fas fa-plus mr-2"></i> Add Site
-        </button>
-        @endcan
+        <div class="flex flex-wrap items-center gap-4 mb-4">
+            @can('create_sites')
+            <button data-modal-target="add-site-modal" data-modal-toggle="add-site-modal"
+                class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-lg shadow-sm transition">
+                <i class="fas fa-plus mr-2"></i> Add Site
+            </button>
+            @endcan
+
+            <form action="{{ route('admin.sites') }}" method="GET" class="flex items-center gap-2">
+                <select name="company_id" onchange="this.form.submit()" class="bg-white dark:bg-gray-700 border-none text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-lg p-2 shadow-sm focus:ring-0">
+                    <option value="">All Companies</option>
+                    @foreach($companies as $company)
+                        <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                    @endforeach
+                </select>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search sites..." class="bg-white dark:bg-gray-700 border-none text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-lg p-2 shadow-sm focus:ring-0">
+                <button type="submit" class="bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition">
+                    <i class="fas fa-search"></i>
+                </button>
+                @if(request()->anyFilled(['company_id', 'search']))
+                    <a href="{{ route('admin.sites') }}" class="text-[10px] font-black text-red-500 uppercase">Clear</a>
+                @endif
+            </form>
+        </div>
 
         <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
             <div class="overflow-x-auto">
@@ -32,7 +49,8 @@
                     <tr class="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
                         <th class="py-2 px-3 text-left">Logo</th>
                         <th class="py-2 px-3 text-left">Name</th>
-                        <th class="py-2 px-3 text-left">Cash Balance</th>
+                        <th class="py-2 px-3 text-left">Company</th>
+                        <th class="py-2 px-3 text-left">Cash Bal</th>
                         <th class="py-2 px-3 text-left">Digital Balance</th>
                         <th class="py-2 px-3 text-right">Actions</th>
                     </tr>
@@ -50,6 +68,9 @@
                                 @endif
                             </td>
                             <td class="py-2 px-3 text-left whitespace-nowrap font-bold text-xs text-gray-900 dark:text-white">{{ $site->name }}</td>
+                            <td class="py-2 px-3 text-left whitespace-nowrap text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">
+                                {{ $site->company->name ?? '---' }}
+                            </td>
                             <td class="py-2 px-3 text-left text-xs font-black text-green-600 dark:text-green-400 whitespace-nowrap">
                                 <span class="text-[9px] opacity-70">UGX</span> {{ number_format($site->cash_sales_balance ?? 0) }}
                             </td>
@@ -161,6 +182,15 @@
                                                     <input type="text" id="edit_contact_phone_{{ $site->id }}" name="contact_phone" value="{{ $site->contact_phone }}"
                                                         class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
                                                 </div>
+                                                <div class="md:col-span-2">
+                                                    <label for="edit_company_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
+                                                    <select id="edit_company_{{ $site->id }}" name="company_id" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                        <option value="">No Company</option>
+                                                        @foreach($companies as $company)
+                                                            <option value="{{ $company->id }}" {{ $site->company_id == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
                                             </div>
 
                                             @error('logo')
@@ -191,27 +221,6 @@
                                                 </div>
                                             </div>
                                             
-                                            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
-                                                <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fee Configuration</div>
-                                                <div class="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (Fixed)</label>
-                                                        <input type="number" step="1" name="customer_fee_fixed" value="{{ $site->customer_fee_fixed }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (%)</label>
-                                                        <input type="number" step="0.01" name="customer_fee_percent" value="{{ $site->customer_fee_percent }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (Fixed)</label>
-                                                        <input type="number" step="1" name="site_fee_fixed" value="{{ $site->site_fee_fixed }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (%)</label>
-                                                        <input type="number" step="0.01" name="site_fee_percent" value="{{ $site->site_fee_percent }}" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                                    </div>
-                                                </div>
-                                            </div>
 
                                             <button type="submit"
                                                 class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">
@@ -315,6 +324,15 @@
                                     <input type="text" id="add_contact_phone" name="contact_phone"
                                         class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
                                 </div>
+                                <div class="md:col-span-2">
+                                    <label for="add_company" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
+                                    <select id="add_company" name="company_id" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                        <option value="">No Company</option>
+                                        @foreach($companies as $company)
+                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
@@ -336,27 +354,6 @@
                                 <input type="file" id="add_logo" name="logo" class="block w-full text-[10px] text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                             </div>
                             
-                            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
-                                <div class="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Fee Configuration</div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (Fixed)</label>
-                                        <input type="number" step="1" name="customer_fee_fixed" value="0" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Customer Fee (%)</label>
-                                        <input type="number" step="0.01" name="customer_fee_percent" value="0.00" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (Fixed)</label>
-                                        <input type="number" step="1" name="site_fee_fixed" value="0" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[8px] font-black uppercase text-gray-400 mb-1">Site Fee (%)</label>
-                                        <input type="number" step="0.01" name="site_fee_percent" value="0.00" class="bg-white dark:bg-gray-800 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2 shadow-sm">
-                                    </div>
-                                </div>
-                            </div>
 
                             <button type="submit"
                                 class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition shadow-sm">

@@ -5,9 +5,12 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SiteController;
+use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\FeeController;
 use App\Http\Controllers\SettlementController;
 use App\Services\SMSService;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PasswordChangeController;
 use App\Jobs\SendWhatsAppJob;
 
 
@@ -32,16 +35,36 @@ Route::get('/voucher/{transaction}', [CustomerController::class, 'showVoucher'])
 Route::get('/transactions', [CustomerController::class, 'showTransactions'])->name('customer.transactions');
 Route::any('/jpesa/callback',[CustomerController::class, 'handleCallback']);
 
-Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent'], 'prefix' => 'admin'], function () {
+Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent|Company Admin'], 'prefix' => 'admin'], function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
-    // Site Management - Only Owner can manage sites
-    Route::resource('sites', SiteController::class)->middleware(['role:Owner'])->names([
+    // Site Management
+    Route::resource('sites', SiteController::class)->middleware(['role:Owner|Company Admin'])->names([
         'index' => 'admin.sites',
         'store' => 'admin.addSite',
         'update' => 'admin.updateSite',
-        'show' => 'admin.site.details', // Changed to admin.site.details as requested by user or just descriptive
+        'show' => 'admin.site.details',
         'destroy' => 'admin.deleteSite',
+    ]);
+
+    // Company Management
+    Route::resource('companies', CompanyController::class)->names([
+        'index' => 'admin.companies.index',
+        'create' => 'admin.companies.create',
+        'store' => 'admin.companies.store',
+        'edit' => 'admin.companies.edit',
+        'update' => 'admin.companies.update',
+        'destroy' => 'admin.companies.destroy',
+    ]);
+
+    // Fee Management
+    Route::resource('fees', FeeController::class)->names([
+        'index' => 'admin.fees.index',
+        'create' => 'admin.fees.create',
+        'store' => 'admin.fees.store',
+        'edit' => 'admin.fees.edit',
+        'update' => 'admin.fees.update',
+        'destroy' => 'admin.fees.destroy',
     ]);
 
     Route::get('/packages', [AdminController::class, 'showPackages'])->name('admin.packages');
@@ -56,6 +79,7 @@ Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent'], '
     Route::post('/users', [UserController::class, 'store'])->name('admin.addUser');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.updateUser');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.deleteUser');
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('admin.users.reset-password');
 
     Route::get('/reports', [AdminController::class, 'showReports'])->name('admin.reports');
     Route::get('/transactions', [AdminController::class, 'showTransactions'])->name('admin.transactions'); 
@@ -76,6 +100,8 @@ Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent'], '
     Route::get('/packages/{siteId}', [AdminController::class, 'getPackagesBySite'])->name('admin.sitePackages');
     Route::post('/admin/vouchers/bulk-action', [AdminController::class, 'bulkAction'])->name('admin.vouchers.bulkAction');
 
+    Route::post('/admin/vouchers/bulk-action', [AdminController::class, 'bulkAction'])->name('admin.vouchers.bulkAction');
+
     // Role & Permission Management - Owner Only
     Route::middleware(['role:Owner'])->group(function () {
         Route::get('/roles', [App\Http\Controllers\Admin\RoleController::class, 'index'])->name('admin.roles.index');
@@ -85,6 +111,11 @@ Route::group(['middleware' => ['auth', 'role:Owner|Manager|Supervisor|Agent'], '
         Route::put('/roles/{role}', [App\Http\Controllers\Admin\RoleController::class, 'update'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('admin.roles.destroy');
     });
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/change-password', [PasswordChangeController::class, 'show'])->name('auth.change-password');
+    Route::post('/change-password', [PasswordChangeController::class, 'update'])->name('auth.change-password.update');
 });
 
 // Agent Portal - Mobile First

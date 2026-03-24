@@ -22,8 +22,15 @@ class FeeService
      */
     public function calculateFees(Site $site, $packageAmount)
     {
-        $customerFee = $site->customer_fee_fixed + ($packageAmount * ($site->customer_fee_percent / 100));
-        $siteFee = $site->site_fee_fixed + ($packageAmount * ($site->site_fee_percent / 100));
+        $feeSource = $site->company?->fee;
+        
+        // If no company fee, use site specific fees as fallback
+        if (!$feeSource) {
+            $feeSource = $site;
+        }
+
+        $customerFee = ($feeSource->customer_fee_fixed ?? 0) + ($packageAmount * (($feeSource->customer_fee_percent ?? 0) / 100));
+        $siteFee = ($feeSource->site_fee_fixed ?? 0) + ($packageAmount * (($feeSource->site_fee_percent ?? 0) / 100));
         $totalFee = $customerFee + $siteFee;
         $totalAmount = $packageAmount + $customerFee; // Total customer pays is base price + customer fee
 

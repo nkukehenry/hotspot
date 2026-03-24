@@ -126,6 +126,28 @@
                 </li>
                 @endrole
 
+                @canany(['view_companies', 'manage_companies'])
+                <li>
+                    <a href="{{ route('admin.companies.index') }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.companies*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <i
+                            class="icon-briefcase w-5 h-5 transition duration-75 {{ request()->routeIs('admin.companies*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.companies*') ? 'font-bold' : '' }}">Companies</span>
+                    </a>
+                </li>
+                @endcanany
+
+                @canany(['view_fees', 'manage_fees'])
+                <li>
+                    <a href="{{ route('admin.fees.index') }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group {{ request()->routeIs('admin.fees*') ? 'bg-gray-100 dark:bg-gray-700' : '' }}">
+                        <i
+                            class="icon-wallet w-5 h-5 transition duration-75 {{ request()->routeIs('admin.fees*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' }}"></i>
+                        <span class="flex-1 ms-3 whitespace-nowrap {{ request()->routeIs('admin.fees*') ? 'font-bold' : '' }}">Fees</span>
+                    </a>
+                </li>
+                @endcanany
+
                 @canany(['manage_sites', 'view_sites','create_sites','edit_sites','delete_sites'])
                 <li>
                     <a href="{{ route('admin.sites') }}"
@@ -239,6 +261,18 @@
 
     <div class="px-4 sm:ml-64">
         <div class="py-4 mt-14">
+            @if (session('success'))
+                <div class="mb-4 p-4 rounded-lg bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold border border-green-100 dark:border-green-800">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-4 p-4 rounded-lg bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold border border-red-100 dark:border-red-800">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @yield('content')
         </div>
     </div>

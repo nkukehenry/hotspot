@@ -34,7 +34,11 @@ class RolesAndPermissionsSeeder extends Seeder
             // Dashboards
             'view_owner_dashboard', 'view_manager_dashboard', 'view_agent_dashboard', 'view_site_dashboard',
             // Settings
-            'manage_settings'
+            'manage_settings',
+            // Companies
+            'view_companies', 'create_companies', 'edit_companies', 'delete_companies',
+            // Fees
+            'view_fees', 'create_fees', 'edit_fees', 'delete_fees',
         ];
 
         foreach ($permissions as $permission) {
@@ -78,5 +82,15 @@ class RolesAndPermissionsSeeder extends Seeder
         // Owner (Platform Admin)
         $role = Role::firstOrCreate(['name' => 'Owner']);
         $role->syncPermissions(Permission::all()); // All permissions including create_sites, delete_sites, manage_roles, manage_settings
+
+        // Company Admin
+        $role = Role::firstOrCreate(['name' => 'Company Admin']);
+        $role->syncPermissions([
+            'view_sites', 'create_sites', 'edit_sites',
+            'view_users', 'create_users', 'edit_users', 'delete_users',
+            'view_packages', 'view_vouchers',
+            'view_transactions', 'view_reports',
+            'view_owner_dashboard', 'view_manager_dashboard', 'view_site_dashboard'
+        ]);
     }
 }
