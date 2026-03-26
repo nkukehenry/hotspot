@@ -22,13 +22,15 @@ class SiteScope implements Scope
                 return;
             }
 
-            // Only filter if the user is attached to a specific site
-            if ($user->site_id) {
-                $table = $model->getTable();
-                
-                // Safety check: ensure the table actually has a site_id column
-                if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'site_id')) {
+            // For all other roles, they MUST be scoped to a site.
+            $table = $model->getTable();
+            
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'site_id')) {
+                if ($user->site_id) {
                     $builder->where($table . '.site_id', $user->site_id);
+                } else {
+                    // Force a condition that fails if they don't have a site_id
+                    $builder->whereRaw('0 = 1');
                 }
             }
         }

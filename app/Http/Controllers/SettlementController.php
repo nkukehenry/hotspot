@@ -59,7 +59,16 @@ class SettlementController extends Controller
         }
 
         $settlements = $query->paginate(15);
-        $sites = Site::all();
+        
+        if ($user->hasRole('Company Admin')) {
+             $sites = Site::where('company_id', $user->company_id)->get();
+        } elseif ($user->hasRole('Owner')) {
+             $sites = Site::all();
+        } elseif ($user->site_id) {
+             $sites = Site::where('id', $user->site_id)->get();
+        } else {
+             $sites = collect();
+        }
 
         return view('admin.settlements.index', compact('settlements', 'availableBalance', 'pendingFees', 'sites', 'site'));
     }
