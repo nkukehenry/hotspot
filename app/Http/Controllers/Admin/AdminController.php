@@ -475,8 +475,8 @@ class AdminController extends Controller
 
         $siteId = $request->input('site_id');
 
-        // RBAC Override
-        if ($user->site_id) {
+        // RBAC Override - Don't force site filter for Company Admins
+        if ($user->site_id && !$user->hasRole('Company Admin')) {
             $siteId = $user->site_id;
         }
 
@@ -546,7 +546,7 @@ class AdminController extends Controller
             ->when($user->hasRole('Company Admin'), function ($query) use ($user) {
                  return $query->where('sites.company_id', $user->company_id);
             })
-            ->when($user->site_id, function ($query, $siteId) {
+            ->when($user->site_id && !$user->hasRole('Company Admin'), function ($query, $siteId) {
                  return $query->where('packages.site_id', $siteId);
             })
             ->paginate(10);
@@ -606,8 +606,8 @@ class AdminController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // RBAC Scope
-        if ($user->site_id) {
+        // RBAC Scope - Don't force site filter for Company Admins
+        if ($user->site_id && !$user->hasRole('Company Admin')) {
             $query->where('site_id', $user->site_id);
         }
 

@@ -17,13 +17,16 @@ class SiteScope implements Scope
         if (Auth::check()) {
             $user = Auth::user();
 
+            // Skip scope for Owners and Company Admins as they see higher level data.
+            if ($user->hasRole('Owner') || $user->hasRole('Company Admin')) {
+                return;
+            }
+
             // Only filter if the user is attached to a specific site
-            // Platform Owners see all data.
             if ($user->site_id) {
                 $table = $model->getTable();
                 
                 // Safety check: ensure the table actually has a site_id column
-                // This prevents SQL errors on incompatible models.
                 if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'site_id')) {
                     $builder->where($table . '.site_id', $user->site_id);
                 }
