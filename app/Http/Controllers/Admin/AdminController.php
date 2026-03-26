@@ -95,7 +95,21 @@ class AdminController extends Controller
 
             $trendData = $trendQuery->get();
 
-            return view('admin.dashboard.owner', compact('stats', 'sitePerformance', 'trendData', 'dateFrom', 'dateTo'));
+            $voucherInventory = DB::table('packages')
+                ->join('sites', 'packages.site_id', '=', 'sites.id')
+                ->leftJoin('vouchers', function($join) {
+                    $join->on('packages.id', '=', 'vouchers.package_id')
+                         ->where('vouchers.is_used', false);
+                })
+                ->when($user->hasRole('Company Admin'), function($q) use ($user) {
+                    return $q->where('sites.company_id', $user->company_id);
+                })
+                ->select('sites.name as site_name', 'packages.name as package_name', 'packages.id as package_id', DB::raw('count(vouchers.id) as available_count'))
+                ->groupBy('sites.id', 'sites.name', 'packages.id', 'packages.name')
+                ->orderBy('available_count', 'asc')
+                ->get();
+
+            return view('admin.dashboard.owner', compact('stats', 'sitePerformance', 'trendData', 'voucherInventory', 'dateFrom', 'dateTo'));
         }
 
         // 2. Manager Dashboard Data (Site Specific)
@@ -136,7 +150,17 @@ class AdminController extends Controller
                 ->groupBy('packages.id', 'packages.name')
                 ->get();
 
-            return view('admin.dashboard.manager', compact('stats', 'agentPerformance', 'packagePerformance', 'dateFrom', 'dateTo'));
+            $voucherInventory = DB::table('packages')
+                ->leftJoin('vouchers', function($join) {
+                    $join->on('packages.id', '=', 'vouchers.package_id')
+                         ->where('vouchers.is_used', false);
+                })
+                ->where('packages.site_id', $siteId)
+                ->select('packages.name', 'packages.id', DB::raw('count(vouchers.id) as available_count'))
+                ->groupBy('packages.id', 'packages.name')
+                ->get();
+
+            return view('admin.dashboard.manager', compact('stats', 'agentPerformance', 'packagePerformance', 'voucherInventory', 'dateFrom', 'dateTo'));
         }
 
         // Fallback or Basic View

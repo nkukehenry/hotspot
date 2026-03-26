@@ -75,6 +75,53 @@
         </div>
     </div>
 
+    <!-- Voucher Inventory Alerts -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-6">
+        <div class="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
+            <h3 class="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-boxes-stacked text-blue-500"></i>
+                Package Stock Levels
+            </h3>
+            <span class="text-[9px] font-black text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded border border-red-100 dark:border-red-900/50">LOW STOCK ALERT @ 100</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/30 dark:bg-gray-900/10">
+                        <th class="px-4 py-1.5 text-[9px] font-black text-gray-400 uppercase">Package</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black text-gray-400 uppercase text-right">Available</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black text-gray-400 uppercase text-center">Status</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black text-gray-400 uppercase text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-[11px]">
+                    @forelse($voucherInventory as $item)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors {{ $item->available_count <= 100 ? 'bg-red-50/40 dark:bg-red-900/10' : '' }}">
+                        <td class="px-4 py-1.5 font-bold text-gray-900 dark:text-white uppercase">{{ $item->name }}</td>
+                        <td class="px-4 py-1.5 font-black text-right {{ $item->available_count <= 100 ? 'text-red-600 font-sans text-xs' : 'text-gray-900 dark:text-white' }}">
+                            {{ number_format($item->available_count) }}
+                        </td>
+                        <td class="px-4 py-1.5 text-center">
+                            @if($item->available_count <= 100)
+                            <span class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase bg-red-600 text-white shadow-sm ring-1 ring-red-700">CRITICAL</span>
+                            @else
+                            <span class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase bg-green-500 text-white shadow-sm">HEALTHY</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-1.5 text-right">
+                             <a href="{{ route('admin.packages.vouchers') }}?package_id={{ $item->id }}" class="text-blue-600 font-black hover:underline tracking-tight text-[9px] uppercase">Upload</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="px-4 py-6 text-center text-gray-400 italic">No packages configured for this site.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Agent Leaderboard -->
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
