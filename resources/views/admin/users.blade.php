@@ -95,6 +95,50 @@
                                                 class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" required shadow-sm>
                                         </div>
                                         <div class="mb-3">
+                                            <label for="edit_role_{{ $user->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Role</label>
+                                            <select id="edit_role_{{ $user->id }}" name="role"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                @role('Owner')
+                                                    <option value="Owner" {{ $user->hasRole('Owner') ? 'selected' : '' }}>Platform Owner</option>
+                                                    <option value="Company Admin" {{ $user->hasRole('Company Admin') ? 'selected' : '' }}>Company Administrator</option>
+                                                @endrole
+                                                
+                                                @hasanyrole('Owner|Company Admin')
+                                                    <option value="Manager" {{ $user->hasRole('Manager') ? 'selected' : '' }}>Site Manager</option>
+                                                    <option value="Supervisor" {{ $user->hasRole('Supervisor') ? 'selected' : '' }}>Site Supervisor</option>
+                                                @endhasanyrole
+
+                                                <option value="Agent" {{ $user->hasRole('Agent') ? 'selected' : '' }}>Sales Agent</option>
+                                            </select>
+                                        </div>
+
+                                        @role('Owner')
+                                        <div class="mb-3">
+                                            <label for="edit_company_id_{{ $user->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
+                                            <select id="edit_company_id_{{ $user->id }}" name="company_id"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                <option value="">None (Platform Level)</option>
+                                                @foreach($companies as $company)
+                                                    <option value="{{ $company->id }}" {{ $user->company_id == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        @endrole
+
+                                        @hasanyrole('Owner|Company Admin')
+                                        <div class="mb-4">
+                                            <label for="edit_site_id_{{ $user->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
+                                            <select id="edit_site_id_{{ $user->id }}" name="site_id"
+                                                class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
+                                                <option value="">None (Platform/Company Level)</option>
+                                                @foreach($sites as $site)
+                                                    <option value="{{ $site->id }}" {{ $user->site_id == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        @endhasanyrole
+
+                                        <div class="mb-3">
                                             <label for="edit_password_{{ $user->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">New Password (Leave blank to keep current)</label>
                                             <input type="password" id="edit_password_{{ $user->id }}" name="password" placeholder="••••••••"
                                                 class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>

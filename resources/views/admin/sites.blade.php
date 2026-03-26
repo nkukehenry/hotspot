@@ -26,12 +26,14 @@
             @endcan
 
             <form action="{{ route('admin.sites') }}" method="GET" class="flex items-center gap-2">
+                @role('Owner')
                 <select name="company_id" onchange="this.form.submit()" class="bg-white dark:bg-gray-700 border-none text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-lg p-2 shadow-sm focus:ring-0">
                     <option value="">All Companies</option>
                     @foreach($companies as $company)
                         <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                     @endforeach
                 </select>
+                @endrole
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search sites..." class="bg-white dark:bg-gray-700 border-none text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-lg p-2 shadow-sm focus:ring-0">
                 <button type="submit" class="bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition">
                     <i class="fas fa-search"></i>
@@ -182,6 +184,7 @@
                                                     <input type="text" id="edit_contact_phone_{{ $site->id }}" name="contact_phone" value="{{ $site->contact_phone }}"
                                                         class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
                                                 </div>
+                                                @role('Owner')
                                                 <div class="md:col-span-2">
                                                     <label for="edit_company_{{ $site->id }}" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
                                                     <select id="edit_company_{{ $site->id }}" name="company_id" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
@@ -191,6 +194,7 @@
                                                         @endforeach
                                                     </select>
                                                 </div>
+                                                @endrole
                                             </div>
 
                                             @error('logo')
@@ -324,6 +328,7 @@
                                     <input type="text" id="add_contact_phone" name="contact_phone"
                                         class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
                                 </div>
+                                @role('Owner')
                                 <div class="md:col-span-2">
                                     <label for="add_company" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
                                     <select id="add_company" name="company_id" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2" shadow-sm>
@@ -333,6 +338,7 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @endrole
                             </div>
                             
                             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">

@@ -48,6 +48,10 @@ class SiteController extends Controller
             \Illuminate\Support\Facades\Log::info("Site logo uploaded: " . $logoPath);
         }
 
+        if (Auth::user()->hasRole('Company Admin')) {
+            $data['company_id'] = Auth::user()->company_id;
+        }
+
         Site::create($data);
 
         return redirect()->route('admin.sites')->with('success', 'Site created successfully.');
@@ -64,7 +68,16 @@ class SiteController extends Controller
             'contact_phone' => 'nullable|string',
         ]);
 
+        $user = Auth::user();
+        if ($user->hasRole('Company Admin') && $site->company_id != $user->company_id) {
+            abort(403);
+        }
+
         $data = $request->except('logo');
+
+        if ($user->hasRole('Company Admin')) {
+            $data['company_id'] = $user->company_id; // Prevent changing company
+        }
 
         if ($request->hasFile('logo')) {
             $logoPath = $request->file('logo')->store('logos', 'public');
@@ -79,6 +92,10 @@ class SiteController extends Controller
 
     public function show(Site $site)
     {
+        if (Auth::user()->hasRole('Company Admin') && $site->company_id != Auth::user()->company_id) {
+            abort(403);
+        }
+
         $transactions = $site->transactions()->latest()->take(20)->get(); 
         $packages = $site->packages;
         $users = $site->users;
@@ -112,6 +129,10 @@ class SiteController extends Controller
 
     public function destroy(Site $site)
     {
+        if (Auth::user()->hasRole('Company Admin') && $site->company_id != Auth::user()->company_id) {
+            abort(403);
+        }
+
         $site->delete();
         return redirect()->route('admin.sites')->with('success', 'Site deleted successfully.');
     }

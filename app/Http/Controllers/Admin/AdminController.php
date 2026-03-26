@@ -307,9 +307,16 @@ class AdminController extends Controller
         $packageId = $request->package_id;
         
         // Scope check
-        if (Auth::user()->site_id) {
-            $package = Package::find($packageId);
-            if ($package->site_id != Auth::user()->site_id) {
+        $user = Auth::user();
+        if ($user->hasRole('Company Admin') || $user->site_id) {
+            $package = Package::with('site')->find($packageId);
+            if (!$package) abort(404);
+
+            if ($user->hasRole('Company Admin')) {
+                if ($package->site->company_id != $user->company_id) {
+                    abort(403, 'Unauthorized package access.');
+                }
+            } elseif ($user->site_id && $package->site_id != $user->site_id) {
                 abort(403, 'Cannot upload vouchers for another site package.');
             }
         }
@@ -349,8 +356,14 @@ class AdminController extends Controller
         ]);
 
         // Scoping check for non-Owners
-        if (Auth::user()->site_id && $request->site_id != Auth::user()->site_id) {
-             abort(403, 'Cannot create package for another site.');
+        $user = Auth::user();
+        if ($user->hasRole('Company Admin')) {
+            $site = Site::find($request->site_id);
+            if (!$site || $site->company_id != $user->company_id) {
+                return redirect()->back()->with('error', 'Unauthorized site selected.');
+            }
+        } elseif ($user->site_id && $user->site_id != $request->site_id) {
+             return redirect()->back()->with('error', 'Unauthorized site selected.');
         }
 
         Package::create($request->all());
@@ -364,11 +377,6 @@ class AdminController extends Controller
             abort(403);
         }
 
-        // Scoping check
-        if (Auth::user()->site_id && $package->site_id != Auth::user()->site_id) {
-             abort(403);
-        }
-
         $request->validate([
             'name' => 'required|string|max:255',
             'cost' => 'required|numeric|min:0',
@@ -376,7 +384,18 @@ class AdminController extends Controller
             'site_id' => 'required|exists:sites,id',
         ]);
 
-        if (Auth::user()->site_id && $request->site_id != Auth::user()->site_id) {
+        $user = Auth::user();
+
+        if ($user->hasRole('Company Admin')) {
+            if ($package->site->company_id != $user->company_id) {
+                abort(403);
+            }
+            // Also check the NEW site_id if it's being changed
+            $newSite = Site::find($request->site_id);
+            if (!$newSite || $newSite->company_id != $user->company_id) {
+                return redirect()->back()->with('error', 'Unauthorized site selected.');
+            }
+        } elseif ($user->site_id && $package->site_id != $user->site_id) {
              abort(403);
         }
 
@@ -388,7 +407,13 @@ class AdminController extends Controller
     public function getPackagesBySite($siteId)
     {
         $user = Auth::user();
-        if ($user->site_id && $user->site_id != $siteId) {
+        $site = Site::findOrFail($siteId);
+
+        if ($user->hasRole('Company Admin')) {
+            if ($site->company_id != $user->company_id) {
+                abort(403);
+            }
+        } elseif ($user->site_id && $user->site_id != $siteId) {
             abort(403);
         }
         $packages = Package::where('site_id', $siteId)->get();
@@ -440,7 +465,9 @@ class AdminController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->site_id) {
+        if ($user->hasRole('Company Admin')) {
+             $sites = Site::where('company_id', $user->company_id)->get();
+        } elseif ($user->site_id) {
              $sites = Site::where('id', $user->site_id)->get();
         } else {
              $sites = Site::all();
@@ -454,7 +481,15 @@ class AdminController extends Controller
         }
 
         // Query packages, applying the site filter if provided
-        $packages = Package::when($siteId, function ($query, $siteId) {
+        $packagesQuery = Package::query();
+
+        if ($user->hasRole('Company Admin')) {
+            $packagesQuery->whereHas('site', function($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        $packages = $packagesQuery->when($siteId, function ($query, $siteId) {
             return $query->where('site_id', $siteId);
         })->paginate(10);
 
@@ -466,8 +501,12 @@ class AdminController extends Controller
         if (!Auth::user()->can('delete_packages')) {
             abort(403);
         }
-         // Scoping check
-        if (Auth::user()->site_id && $package->site_id != Auth::user()->site_id) {
+        $user = Auth::user();
+        if ($user->hasRole('Company Admin')) {
+            if ($package->site->company_id != $user->company_id) {
+                abort(403);
+            }
+        } elseif ($user->site_id && $package->site_id != $user->site_id) {
              abort(403);
         }
 
@@ -478,7 +517,10 @@ class AdminController extends Controller
     public function showVouchers(Request $request)
     {
         $user = Auth::user();
-        if ($user->site_id) {
+        if ($user->hasRole('Company Admin')) {
+             $sites = Site::where('company_id', $user->company_id)->get();
+             $packages = Package::whereHas('site', fn($q) => $q->where('company_id', $user->company_id))->get();
+        } elseif ($user->site_id) {
              $sites = Site::where('id', $user->site_id)->get();
              $packages = Package::where('site_id', $user->site_id)->get();
         } else {
@@ -501,6 +543,9 @@ class AdminController extends Controller
             ->when($request->package_id, function ($query, $packageId) {
                 return $query->where('vouchers.package_id', $packageId);
             })
+            ->when($user->hasRole('Company Admin'), function ($query) use ($user) {
+                 return $query->where('sites.company_id', $user->company_id);
+            })
             ->when($user->site_id, function ($query, $siteId) {
                  return $query->where('packages.site_id', $siteId);
             })
@@ -515,7 +560,10 @@ class AdminController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->site_id) {
+        if ($user->hasRole('Company Admin')) {
+             $sites = Site::where('company_id', $user->company_id)->get();
+             $packages = Package::whereHas('site', fn($q) => $q->where('company_id', $user->company_id))->get();
+        } elseif ($user->site_id) {
              $sites = Site::where('id', $user->site_id)->get();
              $packages = Package::where('site_id', $user->site_id)->get();
         } else {
