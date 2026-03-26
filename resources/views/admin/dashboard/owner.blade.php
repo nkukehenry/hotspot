@@ -83,7 +83,7 @@
     </div>
     
     <!-- Voucher Inventory Summary (Company Admins) -->
-    @hasanyrole('Company Admin|Owner')
+    @hasrole('Company Admin')
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-6">
         <div class="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
             <h3 class="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -92,7 +92,7 @@
             </h3>
             <span class="text-[9px] font-black text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded border border-red-100 dark:border-red-900/50">LOW STOCK ALERT @ 100</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-auto max-h-[400px]">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50/30 dark:bg-gray-900/10">
@@ -127,7 +127,8 @@
             </table>
         </div>
     </div>
-    @endhasanyrole
+    @endhasrole
+
 
     <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">

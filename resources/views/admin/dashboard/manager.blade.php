@@ -84,7 +84,7 @@
             </h3>
             <span class="text-[9px] font-black text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded border border-red-100 dark:border-red-900/50">LOW STOCK ALERT @ 100</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-auto max-h-[400px]">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50/30 dark:bg-gray-900/10">
@@ -109,7 +109,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-1.5 text-right">
-                             <a href="{{ route('admin.packages.vouchers') }}?package_id={{ $item->id }}" class="text-blue-600 font-black hover:underline tracking-tight text-[9px] uppercase">Upload</a>
+                             <a href="{{ route('admin.showUploadVouchers') }}?package_id={{ $item->id }}" class="text-blue-600 font-black hover:underline tracking-tight text-[9px] uppercase">Upload</a>
                         </td>
                     </tr>
                     @empty
