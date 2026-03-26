@@ -45,26 +45,41 @@ class Site extends Model
 
         static::creating(function ($site) {
             // Generate a unique site code
-            $site->site_code = 'WIFI-'.strtoupper(Str::random(8));
+            if (empty($site->site_code)) {
+                $site->site_code = self::generateUniqueSiteCode();
+            }
             
             if (empty($site->slug)) {
-                $site->slug = Str::slug($site->name);
+                $site->slug = self::generateUniqueSlug($site->name);
             }
         });
         
         static::updating(function ($site) {
-             if (empty($site->slug)) {
-                $site->slug = Str::slug($site->name);
+             if ($site->isDirty('name') && empty($site->slug)) {
+                $site->slug = self::generateUniqueSlug($site->name);
             }
         });
+    }
+
+    private static function generateUniqueSlug($name)
+    {
+        $slug = \Illuminate\Support\Str::slug($name);
+        $originalSlug = $slug;
+        $count = 1;
+
+        while (self::where('slug', $slug)->exists()) {
+            $count++;
+            $slug = "{$originalSlug}-{$count}";
+        }
+
+        return $slug;
     }
 
     private static function generateUniqueSiteCode()
     {
         do {
-            // Generate a random code (you can customize the format)
-            $code =  'SITE-'.strtoupper(Str::random(8));
-        } while (self::where('site_code', $code)->exists()); // Ensure uniqueness
+            $code = 'WIFI-' . strtoupper(\Illuminate\Support\Str::random(8));
+        } while (self::where('site_code', $code)->exists());
 
         return $code;
     }
