@@ -25,50 +25,27 @@ class SettlementController extends Controller
 
         $query = SettlementRequest::with('site', 'approver')->withSum('transactions', 'site_fee')->latest();
 
-        if ($user->site_id) {
-            $query->where('site_id', $user->site_id);
-            $site = Site::find($user->site_id);
-            // Verify balance dynamically
-            $availableBalance = Transaction::where('site_id', $user->site_id)
+        $siteId = $user->site_id ?? $request->site_id;
+        $site = $siteId ? Site::find($siteId) : null;
+
+        if ($site) {
+            // Verify balance dynamically - site scoping handled by global scope
+            $availableBalance = Transaction::where('site_id', $site->id)
                 ->whereNull('agent_id')
                 ->whereNull('settlement_request_id')
                 ->sum(DB::raw('amount - site_fee'));
 
-            $pendingFees = Transaction::where('site_id', $user->site_id)
+            $pendingFees = Transaction::where('site_id', $site->id)
                 ->whereNull('agent_id')
                 ->whereNull('settlement_request_id')
                 ->sum('site_fee');
         } else {
-            if ($request->site_id) {
-                $query->where('site_id', $request->site_id);
-                $site = Site::find($request->site_id);
-                $availableBalance = Transaction::where('site_id', $request->site_id)
-                    ->whereNull('agent_id')
-                    ->whereNull('settlement_request_id')
-                    ->sum(DB::raw('amount - site_fee'));
-
-                $pendingFees = Transaction::where('site_id', $request->site_id)
-                    ->whereNull('agent_id')
-                    ->whereNull('settlement_request_id')
-                    ->sum('site_fee');
-            } else {
-                $site = null;
-                $availableBalance = 0;
-                $pendingFees = 0;
-            }
+            $availableBalance = 0;
+            $pendingFees = 0;
         }
 
         $settlements = $query->paginate(15);
-        
-        if ($user->hasRole('Company Admin')) {
-             $sites = Site::where('company_id', $user->company_id)->get();
-        } elseif ($user->hasRole('Owner')) {
-             $sites = Site::all();
-        } elseif ($user->site_id) {
-             $sites = Site::where('id', $user->site_id)->get();
-        } else {
-             $sites = collect();
-        }
+        $sites = Site::all();
 
         return view('admin.settlements.index', compact('settlements', 'availableBalance', 'pendingFees', 'sites', 'site'));
     }

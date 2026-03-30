@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\Scopes\SiteScope;
+use App\Models\Scopes\MultitenantScope;
 
 trait HasSiteScope
 {
@@ -13,6 +13,6 @@ trait HasSiteScope
      */
     protected static function booted()
     {
-        static::addGlobalScope(new SiteScope);
+        static::addGlobalScope(new MultitenantScope);
     }
 }

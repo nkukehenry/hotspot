@@ -5,9 +5,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+use App\Traits\HasSiteScope;
+
 class Site extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSiteScope;
 
     protected $fillable = [
         'name',

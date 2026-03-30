@@ -95,8 +95,8 @@ class AdminController extends Controller
 
             $trendData = $trendQuery->get();
 
-            $voucherInventory = DB::table('packages')
-                ->join('sites', 'packages.site_id', '=', 'sites.id')
+            $voucherInventory = DB::table('sites')
+                ->join('packages', 'sites.id', '=', 'packages.site_id')
                 ->leftJoin('vouchers', function($join) {
                     $join->on('packages.id', '=', 'vouchers.package_id')
                          ->where('vouchers.is_used', false);
@@ -489,15 +489,7 @@ class AdminController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->hasRole('Company Admin')) {
-             $sites = Site::where('company_id', $user->company_id)->get();
-        } elseif ($user->hasRole('Owner')) {
-             $sites = Site::all();
-        } elseif ($user->site_id) {
-             $sites = Site::where('id', $user->site_id)->get();
-        } else {
-             $sites = collect();
-        }
+        $sites = Site::all();
 
         $siteId = $request->input('site_id');
 
@@ -507,15 +499,7 @@ class AdminController extends Controller
         }
 
         // Query packages, applying the site filter if provided
-        $packagesQuery = Package::query();
-
-        if ($user->hasRole('Company Admin')) {
-            $packagesQuery->whereHas('site', function($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
-        }
-
-        $packages = $packagesQuery->when($siteId, function ($query, $siteId) {
+        $packages = Package::when($siteId, function ($query, $siteId) {
             return $query->where('site_id', $siteId);
         })->paginate(10);
 
@@ -543,40 +527,15 @@ class AdminController extends Controller
     public function showVouchers(Request $request)
     {
         $user = Auth::user();
-        if ($user->hasRole('Company Admin')) {
-             $sites = Site::where('company_id', $user->company_id)->get();
-             $packages = Package::whereHas('site', fn($q) => $q->where('company_id', $user->company_id))->get();
-        } elseif ($user->hasRole('Owner')) {
-             $sites = Site::all();
-             $packages = Package::all();
-        } elseif ($user->site_id) {
-             $sites = Site::where('id', $user->site_id)->get();
-             $packages = Package::where('site_id', $user->site_id)->get();
-        } else {
-             $sites = collect();
-             $packages = collect();
-        }
+        $sites = Site::all();
+        $packages = Package::all();
 
-        $vouchers = DB::table('vouchers')
-            ->join('packages', 'vouchers.package_id', '=', 'packages.id')
-            ->join('sites', 'packages.site_id', '=', 'sites.id')
-            ->select(
-                'vouchers.*',
-                'packages.name as package_name',
-                'packages.cost',
-                'sites.name as site_name'
-            )
+        $vouchers = Voucher::with(['package', 'site'])
             ->when($request->site_id, function ($query, $siteId) {
-                return $query->where('packages.site_id', $siteId);
+                return $query->where('site_id', $siteId);
             })
             ->when($request->package_id, function ($query, $packageId) {
-                return $query->where('vouchers.package_id', $packageId);
-            })
-            ->when($user->hasRole('Company Admin'), function ($query) use ($user) {
-                 return $query->where('sites.company_id', $user->company_id);
-            })
-            ->when($user->site_id && !$user->hasRole('Company Admin'), function ($query) use ($user) {
-                 return $query->where('packages.site_id', $user->site_id);
+                return $query->where('package_id', $packageId);
             })
             ->paginate(10);
 
@@ -589,28 +548,13 @@ class AdminController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->hasRole('Company Admin')) {
-             $sites = Site::where('company_id', $user->company_id)->get();
-             $packages = Package::whereHas('site', fn($q) => $q->where('company_id', $user->company_id))->get();
-        } elseif ($user->hasRole('Owner')) {
-             $sites = Site::all();
-             $packages = Package::all();
-        } elseif ($user->site_id) {
-             $sites = Site::where('id', $user->site_id)->get();
-             $packages = Package::where('site_id', $user->site_id)->get();
-        } else {
-             $sites = collect();
-             $packages = collect();
-        }
+        $sites = Site::all();
+        $packages = Package::all();
 
         $query = Transaction::with(['site', 'voucher.package']);
 
         // Apply Filters
-        if ($user->hasRole('Company Admin')) {
-            $query->whereHas('site', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
-        } elseif ($request->filled('company_id')) {
+        if ($request->filled('company_id') && $user->hasRole('Owner')) {
             $query->whereHas('site', function ($q) use ($request) {
                 $q->where('company_id', $request->company_id);
             });
@@ -636,11 +580,6 @@ class AdminController extends Controller
 
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // RBAC Scope - Don't force site filter for Company Admins
-        if ($user->site_id && !$user->hasRole('Company Admin')) {
-            $query->where('site_id', $user->site_id);
         }
 
         if ($user->hasRole('Agent')) {
@@ -727,15 +666,7 @@ class AdminController extends Controller
         }
 
         $user = Auth::user();
-        if ($user->hasRole('Company Admin')) {
-            $sites = Site::where('company_id', $user->company_id)->get();
-        } elseif ($user->hasRole('Owner')) {
-            $sites = Site::all();
-        } elseif ($user->site_id) {
-            $sites = Site::where('id', $user->site_id)->get();
-        } else {
-            $sites = collect();
-        }
+        $sites = Site::all();
 
         // Determine active site ID (either manager's site or selected filter)
         $activeSiteId = $user->site_id ?? $request->site_id;
@@ -743,16 +674,6 @@ class AdminController extends Controller
 
         $query = Transaction::query()
             ->with(['site', 'package', 'agent'])
-            ->when($user->hasRole('Company Admin'), function ($q) use ($user) {
-                return $q->whereHas('site', function ($sq) use ($user) {
-                    $sq->where('company_id', $user->company_id);
-                });
-            })
-            ->when($request->company_id && $user->hasRole('Owner'), function ($q) use ($request) {
-                return $q->whereHas('site', function ($sq) use ($request) {
-                    $sq->where('company_id', $request->company_id);
-                });
-            })
             ->when($request->site_id, function ($q) use ($request) {
                 return $q->where('site_id', $request->site_id);
             })

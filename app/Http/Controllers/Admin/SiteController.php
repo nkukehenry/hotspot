@@ -13,15 +13,15 @@ class SiteController extends Controller
     {
         $query = Site::with('company');
 
-        if (Auth::user()->hasRole('Company Admin')) {
-            $query->where('company_id', Auth::user()->company_id);
-        } elseif ($request->filled('company_id')) {
+        if ($request->filled('company_id') && Auth::user()->hasRole('Owner')) {
             $query->where('company_id', $request->company_id);
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('address', 'like', '%' . $request->search . '%');
+            });
         }
 
         $sites = $query->paginate(10)->withQueryString();

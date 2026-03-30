@@ -19,25 +19,10 @@ class UserController extends Controller
         }
 
         $user = Auth::user();
-        $query = User::with('roles', 'company');
-
-        // Multi-tenancy filtering
-        if ($user->hasRole('Company Admin')) {
-            $query->where('company_id', $user->company_id);
-        } elseif ($user->site_id) {
-            $query->where('site_id', $user->site_id);
-        }
-
-        $users = $query->paginate();
+        $users = User::with('roles', 'company')->paginate();
         
-        $sites = [];
-        $companies = [];
-        if ($user->hasRole('Owner')) {
-            $sites = \App\Models\Site::all();
-            $companies = \App\Models\Company::all();
-        } elseif ($user->hasRole('Company Admin')) {
-            $sites = \App\Models\Site::where('company_id', $user->company_id)->get();
-        }
+        $sites = \App\Models\Site::all();
+        $companies = $user->hasRole('Owner') ? \App\Models\Company::all() : [];
 
         return view('admin.users', compact('users', 'sites', 'companies'));
     }
