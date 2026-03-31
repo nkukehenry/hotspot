@@ -24,8 +24,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (\Illuminate\Support\Facades\Schema::hasTable('system_settings')) {
-            view()->share('settings', \App\Models\SystemSetting::first());
+        if (!$this->app->runningInConsole()) {
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('system_settings')) {
+                    view()->share('settings', \App\Models\SystemSetting::first());
+                }
+            } catch (\Exception $e) {
+                // Silently fail to allow the app to boot even if DB is not ready
+                \Illuminate\Support\Facades\Log::warning('AppServiceProvider: Could not share system settings: ' . $e->getMessage());
+            }
         }
     }
 }
