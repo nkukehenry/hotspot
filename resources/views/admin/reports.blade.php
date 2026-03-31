@@ -66,7 +66,7 @@
                         class="bg-gray-100 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
                 </div>
                 
-                @if(!Auth::user()->site_id)
+                @if(!Auth::user()->company_id && !Auth::user()->site_id)
                 <div>
                     <label for="company_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
                     <select name="company_id" id="company_id"
@@ -79,7 +79,9 @@
                         @endforeach
                     </select>
                 </div>
+                @endif
 
+                @if(!Auth::user()->site_id)
                 <div>
                     <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
                     <select name="site_id" id="site_id"

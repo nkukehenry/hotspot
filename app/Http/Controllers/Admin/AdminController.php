@@ -182,6 +182,10 @@ class AdminController extends Controller
         $companyId = $request->input('company_id');
 
         // RBAC Scoping
+        if ($user->company_id) {
+            $companyId = $user->company_id;
+        }
+
         if ($user->site_id) {
             $siteId = $user->site_id;
         }
