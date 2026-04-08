@@ -111,8 +111,8 @@
                 </tbody>
                 </table>
             </div>
-            <div class="p-4">
-                {{ $fees->links() }}
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+                {{ $fees->links('partials.pagination') }}
             </div>
         </div>
 

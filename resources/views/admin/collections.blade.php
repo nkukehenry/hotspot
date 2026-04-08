@@ -205,7 +205,7 @@
                 </table>
             </div>
             <div class="p-4 border-t border-gray-100 dark:border-gray-700">
-                {{ $transactions->links() }}
+                {{ $transactions->links('partials.pagination') }}
             </div>
         </div>
     </div>

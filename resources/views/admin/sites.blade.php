@@ -280,9 +280,12 @@
                         </div>
                     @endforeach
                 </tbody>
-                </table>
-            </div>
+            </table>
         </div>
+        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+            {{ $sites->links('partials.pagination') }}
+        </div>
+    </div>
 
         <!-- Add Site Modal -->
         <div id="add-site-modal" tabindex="-1" aria-hidden="true"

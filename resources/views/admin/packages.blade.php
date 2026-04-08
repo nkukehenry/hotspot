@@ -178,7 +178,9 @@
         </div>
 
         <!-- Pagination Links -->
-        {{ $packages->links() }}
+        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+            {{ $packages->links('partials.pagination') }}
+        </div>
 
         <!-- Add Package Modal -->
         <div id="add-package-modal" tabindex="-1" aria-hidden="true"

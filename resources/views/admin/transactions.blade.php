@@ -140,7 +140,7 @@
                 </table>
             </div>
             <div class="px-5 py-5 bg-white dark:bg-gray-800 border-t flex flex-col xs:flex-row items-center xs:justify-between">
-                {{ $transactions->appends(request()->query())->links() }}
+                {{ $transactions->appends(request()->query())->links('partials.pagination') }}
             </div>
         </div>
     </div>

@@ -15,6 +15,59 @@
         </button>
         @endcan
 
+        <!-- Filter Form -->
+        <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+            <form action="{{ route('admin.users') }}" method="GET" id="filter-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                
+                <div>
+                    <label for="search" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Search</label>
+                    <input type="text" id="search" name="search" value="{{ request('search') }}" placeholder="Name or Email" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
+                </div>
+
+                <div>
+                    <label for="role" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Role</label>
+                    <select id="role" name="role" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
+                        <option value="">All Roles</option>
+                        <option value="Owner" {{ request('role') == 'Owner' ? 'selected' : '' }}>Owner</option>
+                        <option value="Company Admin" {{ request('role') == 'Company Admin' ? 'selected' : '' }}>Company Admin</option>
+                        <option value="Manager" {{ request('role') == 'Manager' ? 'selected' : '' }}>Manager</option>
+                        <option value="Supervisor" {{ request('role') == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
+                        <option value="Agent" {{ request('role') == 'Agent' ? 'selected' : '' }}>Agent</option>
+                    </select>
+                </div>
+
+                @if(Auth::user()->hasRole('Owner'))
+                <div>
+                    <label for="company_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Company</label>
+                    <select id="company_id" name="company_id" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
+                        <option value="">All Companies</option>
+                        @foreach($companies as $company)
+                            <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                @hasanyrole('Owner|Company Admin')
+                <div>
+                    <label for="site_id" class="block text-[9px] font-black uppercase text-gray-400 mb-1">Site</label>
+                    <select id="site_id" name="site_id" class="bg-gray-50 dark:bg-gray-700 border-none text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2">
+                        <option value="">All Sites</option>
+                        @foreach($sites as $site)
+                            <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endhasanyrole
+            </form>
+            <div class="mt-3 flex justify-end gap-2">
+                <a href="{{ route('admin.users') }}" class="text-gray-500 hover:text-gray-700 text-[10px] font-black uppercase tracking-widest px-3 py-2">Clear</a>
+                <button type="submit" form="filter-form" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg shadow-sm transition">
+                    Apply Filter
+                </button>
+            </div>
+        </div>
+
         <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
             <div class="overflow-x-auto">
                 <table class="min-w-full">
@@ -196,6 +249,10 @@
             </tbody>
             </table>
         </div>
+        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+            {{ $users->links('partials.pagination') }}
+        </div>
+    </div>
 
         <!-- Add User Modal -->
         <div id="add-user-modal" tabindex="-1" aria-hidden="true"

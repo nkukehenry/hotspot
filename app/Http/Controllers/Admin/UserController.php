@@ -12,16 +12,55 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+
+
+    public function index(Request $request)
     {
         if (!Auth::user()->can('view_users')) {
             abort(403);
         }
 
         $user = Auth::user();
-        $users = User::with('roles', 'company')->paginate();
+        $query = User::with('roles', 'company');
+
+        // Apply Filters
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('role')) {
+            $query->role($request->role);
+        }
+
+        if ($request->filled('company_id') && $user->hasRole('Owner')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        if ($request->filled('site_id')) {
+             if ($user->hasRole('Owner')) {
+                 $query->where('site_id', $request->site_id);
+             } elseif ($user->hasRole('Company Admin')) {
+                 $query->where('site_id', $request->site_id)
+                       ->where('company_id', $user->company_id);
+             }
+        }
+
+        // RBAC Scoping (if not already handled by MultitenantScope)
+        if ($user->hasRole('Company Admin')) {
+            $query->where('company_id', $user->company_id);
+        } elseif ($user->site_id) {
+            $query->where('site_id', $user->site_id);
+        }
+
+        $users = $query->paginate(15)->withQueryString();
         
-        $sites = \App\Models\Site::all();
+        $sites = \App\Models\Site::when($user->hasRole('Company Admin'), function($q) use ($user) {
+            return $q->where('company_id', $user->company_id);
+        })->get();
+
         $companies = $user->hasRole('Owner') ? \App\Models\Company::all() : [];
 
         return view('admin.users', compact('users', 'sites', 'companies'));

@@ -110,8 +110,8 @@
                 </tbody>
                 </table>
             </div>
-            <div class="p-4">
-                {{ $companies->links() }}
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+                {{ $companies->links('partials.pagination') }}
             </div>
         </div>
 

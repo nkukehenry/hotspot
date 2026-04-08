@@ -142,7 +142,7 @@
 
         <!-- Pagination Links -->
         <div class="mt-4">
-            {{ $vouchers->links() }}
+            {{ $vouchers->links('partials.pagination') }}
         </div>
     </div>
 
