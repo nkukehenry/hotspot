@@ -23,7 +23,6 @@ class AirtelPayment implements PaymentService
     public function pay($amount, $phone_number, $reference)
     {
         try {
-            $accessToken = $this->getAccessToken();
             $formattedPhone = $this->formatPhone($phone_number);
             
             $payload = [
@@ -41,12 +40,7 @@ class AirtelPayment implements PaymentService
                 ]
             ];
 
-            $response = Http::withHeaders([
-                'Authorization' => "Bearer {$accessToken}",
-                'Content-Type' => 'application/json',
-                'X-Country' => 'UG',
-                'X-Currency' => 'UGX'
-            ])->timeout(30)->post($this->baseUrl . '/merchant/v1/payments/', $payload);
+            $response = $this->authenticatedRequest('POST', '/merchant/v1/payments/', $payload);
 
             Log::info("Airtel Payment Response: " . $response->status() . " " . $response->body());
 
@@ -116,13 +110,7 @@ class AirtelPayment implements PaymentService
     public function checkStatus($tranId)
     {
         try {
-             $accessToken = $this->getAccessToken();
-             
-             $response = Http::withHeaders([
-                'Authorization' => "Bearer {$accessToken}",
-                'X-Country' => 'UG',
-                'X-Currency' => 'UGX'
-            ])->get($this->baseUrl . "/standard/v1/payments/{$tranId}");
+            $response = $this->authenticatedRequest('GET', "/standard/v1/payments/{$tranId}");
             
             Log::info("Airtel Status Response: " . $response->body());
             
@@ -161,6 +149,35 @@ class AirtelPayment implements PaymentService
         }
     }
     
+    /**
+     * Helper to perform authenticated requests with a single retry on 401.
+     */
+    private function authenticatedRequest($method, $endpoint, $payload = [], $retry = true)
+    {
+        $accessToken = $this->getAccessToken();
+
+        $request = Http::withHeaders([
+            'Authorization' => "Bearer {$accessToken}",
+            'X-Country' => 'UG',
+            'X-Currency' => 'UGX',
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+        ])->timeout(30);
+
+        $url = $this->baseUrl . $endpoint;
+        $response = (strtoupper($method) === 'POST')
+            ? $request->post($url, $payload)
+            : $request->get($url);
+
+        if ($response->status() === 401 && $retry) {
+            Log::info("Airtel API 401 - Refreshing token and retrying for {$endpoint}...");
+            Cache::forget('airtel_access_token');
+            return $this->authenticatedRequest($method, $endpoint, $payload, false);
+        }
+
+        return $response;
+    }
+
     public function processCallback($payload)
     {
          return $payload;
