@@ -145,6 +145,11 @@ class CustomerController extends Controller
         $res = $paymentProvider->pay($feeData['total_amount'], $mobileNumber, $transactionId);
 
         if ($res['success']) {
+            // Store mapping in Cache since we can't change DB yet
+            if (isset($res['data']->tid)) {
+                Cache::put("ext_ref_{$transactionId}", $res['data']->tid, 3600);
+            }
+            
             return redirect()->route('customer.waiting', $transactionId);
         }
 
@@ -179,16 +184,36 @@ class CustomerController extends Controller
             return response()->json(['status' => 'failed', 'message' => 'Payment failed']);
         }
 
-        // Check cache for callback
-        $callbackData = Cache::get("callback_" . $transactionId);
-        if ($callbackData) {
-            $this->activateAccount($transactionId);
-            $transaction->refresh();
-            if ($transaction->status === 'completed') {
-                return response()->json([
-                    'status' => 'completed',
-                    'redirect_url' => route('customer.voucher', $transaction->id)
-                ]);
+        // Active Polling: Directly call the provider API
+        if ($transaction->status === 'pending') {
+            $paymentProvider = null;
+            $mobileNumber = $transaction->mobile_number;
+
+            if (Str::startsWith($mobileNumber, ['070', '075', '074'])) {
+                $paymentProvider = $this->airtelPayment;
+            } elseif (Str::startsWith($mobileNumber, ['077', '078', '076'])) {
+                $paymentProvider = $this->mtnPayment;
+            }
+
+            if ($paymentProvider) {
+                // Use cached external_ref if available, fallback to internal transaction_id
+                $refToUse = Cache::get("ext_ref_{$transactionId}") ?? $transaction->transaction_id;
+                $res = $paymentProvider->checkStatus($refToUse);
+
+                if ($res['success']) {
+                    $provStatus = $res['data']->status;
+                    if ($provStatus === 'approved' || $provStatus === 'closed') {
+                        $this->activateAccount($transaction->transaction_id);
+                        $transaction->refresh();
+                        return response()->json([
+                            'status' => 'completed',
+                            'redirect_url' => route('customer.voucher', $transaction->id)
+                        ]);
+                    } elseif ($provStatus === 'error' || $provStatus === 'FAILED') {
+                        $transaction->update(['status' => 'failed']);
+                        return response()->json(['status' => 'failed', 'message' => $res['data']->reason ?? 'Payment failed']);
+                    }
+                }
             }
         }
 

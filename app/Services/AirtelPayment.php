@@ -157,11 +157,13 @@ class AirtelPayment implements PaymentService
 
     private function getAccessToken()
     {
+        // Benchmark: Node.js uses Basic Auth and form params
+        $credentials = base64_encode("{$this->clientId}:{$this->clientSecret}");
+        
         $response = Http::withHeaders([
-            'Content-Type' => 'application/json'
-        ])->post($this->baseUrl . '/auth/oauth2/token', [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
+            'Authorization' => "Basic {$credentials}",
+            'Content-Type' => 'application/x-www-form-urlencoded'
+        ])->asForm()->post($this->baseUrl . '/auth/oauth2/token', [
             'grant_type' => 'client_credentials'
         ]);
         
