@@ -31,6 +31,8 @@ Route::get('/wifi/{site}', [CustomerController::class, 'showPackages'])->name('c
 //Route::get('/packages/{site}', [CustomerController::class, 'showPackages'])->name('customer.packages');
 Route::get('/payment/{package}', [CustomerController::class, 'showPayment'])->name('customer.payment');
 Route::post('/payment/{package}', [CustomerController::class, 'processPayment'])->name('customer.processPayment');
+Route::get('/payment/waiting/{transaction}', [CustomerController::class, 'waiting'])->name('customer.waiting');
+Route::get('/payment/check-status/{transaction}', [CustomerController::class, 'checkStatus'])->name('customer.api.checkStatus');
 Route::get('/voucher/{transaction}', [CustomerController::class, 'showVoucher'])->name('customer.voucher');
 Route::get('/transactions', [CustomerController::class, 'showTransactions'])->name('customer.transactions');
 Route::any('/jpesa/callback',[CustomerController::class, 'handleCallback']);

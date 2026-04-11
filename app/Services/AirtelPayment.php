@@ -56,34 +56,6 @@ class AirtelPayment implements PaymentService
                  $tx_data = $data['data']['transaction'] ?? $data['transaction'] ?? null;
                  $tx_id = $tx_data['id'] ?? $reference;
 
-                 // Start Polling for status
-                $startTime = time();
-                $timeout = 60; // 60 seconds
-
-                while ((time() - $startTime) < $timeout) {
-                    sleep(4); 
-                    
-                    $statusCheck = $this->checkStatus($tx_id);
-                    
-                    if ($statusCheck['success']) {
-                        $rawStatus = $statusCheck['data']->raw_status;
-                        $mappedStatus = $statusCheck['data']->status; // approved, error, pending
-                        
-                        if ($mappedStatus === 'approved' || $mappedStatus === 'error') {
-                            // Populate cache for CustomerController
-                            $cbData = [
-                                'status' => $mappedStatus,
-                                'tid' => $tx_id,
-                                'transaction_id' => $tx_id,
-                                'raw_status' => $rawStatus,
-                                'reason' => $statusCheck['data']->reason ?? null
-                            ];
-                            Cache::put("callback_{$tx_id}", (object)$cbData, 600);
-                            break; 
-                        }
-                    }
-                }
-                 
                  return [
                     'success' => true,
                     'data' => (object)[
@@ -168,21 +140,19 @@ class AirtelPayment implements PaymentService
 
     private function getAccessToken()
     {
-        return Cache::remember('airtel_access_token', 3500, function () {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json'
-            ])->post($this->baseUrl . '/auth/oauth2/token', [
-                'client_id' => $this->clientId,
-                'client_secret' => $this->clientSecret,
-                'grant_type' => 'client_credentials'
-            ]);
-            
-            if ($response->successful()) {
-                return $response->json()['access_token'];
-            }
-            
-            throw new \Exception('Failed to get Airtel Access Token: ' . $response->body());
-        });
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json'
+        ])->post($this->baseUrl . '/auth/oauth2/token', [
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'grant_type' => 'client_credentials'
+        ]);
+        
+        if ($response->successful()) {
+            return $response->json()['access_token'];
+        }
+        
+        throw new \Exception('Failed to get Airtel Access Token: ' . $response->body());
     }
 
     private function formatPhone($phone)

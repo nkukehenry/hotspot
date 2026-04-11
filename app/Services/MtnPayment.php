@@ -80,43 +80,15 @@ class MtnPayment implements PaymentService
             Log::info("MTN Payment Response: " . $response->status() . " " . $response->body());
 
             if ($response->status() === 202) {
-                // Start Polling for status
-                $startTime = time();
-                $timeout = 60; // 60 seconds
-
-                while ((time() - $startTime) < $timeout) {
-                    sleep(4); 
-                    
-                    $statusCheck = $this->checkStatus($momoTransactionId);
-                    
-                    if ($statusCheck['success']) {
-                        $rawStatus = $statusCheck['data']->raw_status;
-                        $mappedStatus = $statusCheck['data']->status; // approved, error, pending
-                        
-                        if ($mappedStatus === 'approved' || $mappedStatus === 'error') {
-                            // Populate cache for CustomerController
-                            $cbData = [
-                                'status' => $mappedStatus,
-                                'tid' => $momoTransactionId,
-                                'transaction_id' => $momoTransactionId,
-                                'raw_status' => $rawStatus,
-                                'reason' => $statusCheck['data']->reason ?? null
-                            ];
-                            Cache::put("callback_{$momoTransactionId}", (object)$cbData, 600);
-                            break; 
-                        }
-                    }
-                }
-
-                return [
-                    'success' => true,
-                    'data' => (object)[
-                        'api_status' => 'success', 
-                        'tid' => $momoTransactionId, 
-                        'original_ref' => $reference,
-                        'momo_ref' => $momoTransactionId
-                    ]
-                ];
+                 return [
+                     'success' => true,
+                     'data' => (object)[
+                         'api_status' => 'success', 
+                         'tid' => $momoTransactionId, 
+                         'original_ref' => $reference,
+                         'momo_ref' => $momoTransactionId
+                     ]
+                 ];
             }
 
             return [
@@ -204,33 +176,21 @@ class MtnPayment implements PaymentService
 
     private function getAccessToken()
     {
-        // Cache token
-        return Cache::remember('mtn_access_token', 3500, function () {
-            $credentials = base64_encode("{$this->clientId}:{$this->clientSecret}");
-            
-            $response = Http::withHeaders([
-                'Ocp-Apim-Subscription-Key' => $this->subscriptionKey,
-                'Authorization' => "Basic {$credentials}",
-                'Content-Type' => 'application/json'
-            ])->post($this->baseUrl . 'collection/token/', [
-                'grant_type' => 'client_credentials' // Often sent as body or query depending on implementation, MTN doc says body
-            ]); // Wait, axios implementation sends body { grant_type: 'client_credentials' }
-            
-            // Wait, previous axios implementation:
-            /*
-             axios.post(
-              `${this.baseUrl}collection/token/`,
-              { grant_type: 'client_credentials' },
-              ...
-            */
-            // But some MTN implementations behave differently. Let's stick to the JS logic.
-            
-            if ($response->successful()) {
-                return $response->json()['access_token'];
-            }
-            
-            throw new \Exception('Failed to get MTN Access Token: ' . $response->body());
-        });
+        $credentials = base64_encode("{$this->clientId}:{$this->clientSecret}");
+        
+        $response = Http::withHeaders([
+            'Ocp-Apim-Subscription-Key' => $this->subscriptionKey,
+            'Authorization' => "Basic {$credentials}",
+            'Content-Type' => 'application/json'
+        ])->post($this->baseUrl . 'collection/token/', [
+            'grant_type' => 'client_credentials'
+        ]);
+        
+        if ($response->successful()) {
+            return $response->json()['access_token'];
+        }
+        
+        throw new \Exception('Failed to get MTN Access Token: ' . $response->body());
     }
 
     private function formatPhone($phone)
