@@ -88,8 +88,8 @@ class CustomerController extends Controller
             'mobileNumber' => 'required|numeric',
         ]);
 
-        // Simulate payment processing
-        $transactionId = 'TXN' . rand(1000, 9999);
+        // Generate unique transaction ID with timestamp
+        $transactionId = 'TXN' . now()->format('ymdHis') . rand(100, 999);
 
         // Retrieve the package
         $package = Package::where('code', $packageCode)->firstOrFail();
@@ -113,12 +113,14 @@ class CustomerController extends Controller
 
         // Provider Selection Logic
         $mobileNumber = $request->mobileNumber;
-        $paymentProvider = $this->jpesaPayment; // Default to JPesa
+        $paymentProvider = null;
         $providerName = 'Unknown';
 
         if (Str::startsWith($mobileNumber, ['070', '075', '074'])) {
+            $paymentProvider = $this->airtelPayment;
             $providerName = 'AIRTEL';
         } elseif (Str::startsWith($mobileNumber, ['077', '078', '076'])) {
+            $paymentProvider = $this->mtnPayment;
             $providerName = 'MTN';
         } else {
             return redirect()->back()->with('error', 'Unsupported mobile network prefix. Please use MTN (077, 078, 076) or Airtel (070, 075, 074).');
