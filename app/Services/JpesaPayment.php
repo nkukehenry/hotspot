@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Log;
 
 class JpesaPayment implements PaymentService{
 
-    public function pay($amount,$phone_number,$reference){
+    public function pay($amount, $phone_number, $reference)
+    {
         // Retrieve the callback URL and API key from the environment variables
         $callback_url = config(key: 'payment.jpesa_callback');
         $api_key      = config('payment.jpesa_key'); // Example key, replace with your actual key
@@ -55,6 +56,12 @@ class JpesaPayment implements PaymentService{
 
         // Decode the response
         $array = json_decode($response);
+
+        // Normalize for CustomerController
+        if ($array && isset($array->status) && $array->status == 'success') {
+            $array->api_status = 'success';
+            $array->tid = $array->tid ?? $reference;
+        }
 
         // Return the response
         return [

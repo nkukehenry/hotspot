@@ -6,6 +6,7 @@ use App\Models\Site;
 use App\Models\Package;
 use App\Models\Voucher;
 use App\Models\Transaction;
+use App\Services\JpesaPayment;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use App\Services\SMSService;
@@ -28,12 +29,15 @@ class CustomerController extends Controller
 
     private MtnPayment $mtnPayment;
     private AirtelPayment $airtelPayment;
+    private JpesaPayment $jpesaPayment;
     private FeeService $feeService;
     private LedgerService $ledgerService;
 
-    function __construct(MtnPayment $mtnPayment, AirtelPayment $airtelPayment, FeeService $feeService, LedgerService $ledgerService){
+    function __construct(MtnPayment $mtnPayment, AirtelPayment $airtelPayment, JpesaPayment $jpesaPayment, FeeService $feeService, LedgerService $ledgerService)
+    {
         $this->mtnPayment = $mtnPayment;
         $this->airtelPayment = $airtelPayment;
+        $this->jpesaPayment = $jpesaPayment;
         $this->feeService = $feeService;
         $this->ledgerService = $ledgerService;
     }
@@ -42,16 +46,16 @@ class CustomerController extends Controller
     {
         $sites = Site::all();
         $settings = \App\Models\SystemSetting::first();
-        return view('customer.sites', compact('sites', 'settings')); 
+        return view('customer.sites', compact('sites', 'settings'));
     }
 
     public function showPackages($siteCode)
     {
-        $site = Site::where('site_code',$siteCode)->first();
-        if(!$site){
-             $site = Site::where('slug',$siteCode)->firstOrFail();
+        $site = Site::where('site_code', $siteCode)->first();
+        if (!$site) {
+            $site = Site::where('slug', $siteCode)->firstOrFail();
         }
-        
+
         $packages = Package::where('site_id', $site->id)
             ->whereHas('vouchers', function ($query) {
                 $query->where('is_used', 0);
@@ -61,15 +65,15 @@ class CustomerController extends Controller
 
     public function showPayment($packageCode)
     {
-        $package = Package::where('code',$packageCode)->firstOrFail();
-        
+        $package = Package::where('code', $packageCode)->firstOrFail();
+
         // Re-verify availability before showing payment page
-        $hasVouchers = Voucher::where('package_id', $package->id) 
-                        ->where('is_used', 0)
-                        ->exists();
+        $hasVouchers = Voucher::where('package_id', $package->id)
+            ->where('is_used', 0)
+            ->exists();
 
         if (!$hasVouchers) {
-             return redirect()->route('customer.packages', $package->site->slug ?? $package->site->site_code)
+            return redirect()->route('customer.packages', $package->site->slug ?? $package->site->site_code)
                 ->with('error', 'Sorry, this package just went out of stock.');
         }
 
@@ -91,10 +95,10 @@ class CustomerController extends Controller
         $package = Package::where('code', $packageCode)->firstOrFail();
 
         // Check for available voucher BEFORE anything else
-        $voucher = Voucher::where('package_id', $package->id) 
-                        ->where('is_used', 0)
-                        ->first();
-        
+        $voucher = Voucher::where('package_id', $package->id)
+            ->where('is_used', 0)
+            ->first();
+
         // If no voucher is available, redirect with an error message
         if (!$voucher) {
             return redirect()->route('customer.packages', $package->site->slug ?? $package->site->site_code)
@@ -107,16 +111,14 @@ class CustomerController extends Controller
         // Calculate Fees
         $feeData = $this->feeService->calculateFees($package->site, $package->cost);
 
+        // Provider Selection Logic
         $mobileNumber = $request->mobileNumber;
-        $paymentProvider = null;
+        $paymentProvider = $this->jpesaPayment; // Default to JPesa
         $providerName = 'Unknown';
 
-        // Provider Selection Logic
         if (Str::startsWith($mobileNumber, ['070', '075', '074'])) {
-            $paymentProvider = $this->airtelPayment;
             $providerName = 'AIRTEL';
         } elseif (Str::startsWith($mobileNumber, ['077', '078', '076'])) {
-            $paymentProvider = $this->mtnPayment;
             $providerName = 'MTN';
         } else {
             return redirect()->back()->with('error', 'Unsupported mobile network prefix. Please use MTN (077, 078, 076) or Airtel (070, 075, 074).');
