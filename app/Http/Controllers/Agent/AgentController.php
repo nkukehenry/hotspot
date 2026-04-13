@@ -92,6 +92,9 @@ class AgentController extends Controller
                 'status' => 'completed',
             ]);
 
+            // Increment Site Balance
+            $agent->site->increment('cash_sales_balance', $transaction->amount);
+
             // Mark voucher as used
             $voucher->markAsUsed();
 

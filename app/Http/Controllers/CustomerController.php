@@ -89,7 +89,7 @@ class CustomerController extends Controller
         ]);
 
         // Generate unique transaction ID with timestamp
-        $transactionId = 'TXN' . now()->format('ymdHis') . rand(100, 999);
+        $transactionId = 'TXN' . now()->format('YmdHis') . rand(100, 999);
 
         // Retrieve the package
         $package = Package::where('code', $packageCode)->firstOrFail();
@@ -277,6 +277,15 @@ class CustomerController extends Controller
 
             $transaction->status = 'completed';
             $transaction->save();
+
+            // Increment Site Balance
+            if ($transaction->site) {
+                if ($transaction->agent_id) {
+                    $transaction->site->increment('cash_sales_balance', $transaction->amount);
+                } else {
+                    $transaction->site->increment('digital_sales_balance', $transaction->amount);
+                }
+            }
 
             // Record Ledger
             $this->ledgerService->recordTransaction($transaction);

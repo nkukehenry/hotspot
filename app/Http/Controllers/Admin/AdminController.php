@@ -33,7 +33,7 @@ class AdminController extends Controller
 
         // 1. Owner Dashboard Data (Platform Wide)
         if ($user->can('view_owner_dashboard')) {
-            $baseQuery = Transaction::whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+            $baseQuery = Transaction::where('status', 'completed')->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
             
             if ($user->hasRole('Company Admin')) {
                 $baseQuery->whereHas('site', function($q) use ($user) {
@@ -67,6 +67,7 @@ class AdminController extends Controller
 
             $sitePerformanceQuery = DB::table('transactions')
                 ->join('sites', 'transactions.site_id', '=', 'sites.id')
+                ->where('transactions.status', 'completed')
                 ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
                 ->select('sites.name', DB::raw('sum(amount) as revenue'), DB::raw('count(transactions.id) as sales_count'))
                 ->groupBy('sites.id', 'sites.name');
@@ -80,6 +81,7 @@ class AdminController extends Controller
             // Trend Data for Chart
             $trendQuery = DB::table('transactions')
                 ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d') as date"), DB::raw('sum(amount) as revenue'))
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
                 ->groupBy('date')
                 ->orderBy('date');
@@ -136,6 +138,7 @@ class AdminController extends Controller
 
             $agentPerformance = DB::table('transactions')
                 ->join('users', 'transactions.agent_id', '=', 'users.id')
+                ->where('transactions.status', 'completed')
                 ->where('transactions.site_id', $siteId)
                 ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
                 ->select('users.name', DB::raw('sum(amount) as revenue'), DB::raw('count(transactions.id) as sales_count'))
@@ -144,6 +147,7 @@ class AdminController extends Controller
 
             $packagePerformance = DB::table('transactions')
                 ->join('packages', 'transactions.package_id', '=', 'packages.id')
+                ->where('transactions.status', 'completed')
                 ->where('transactions.site_id', $siteId)
                 ->whereBetween('transactions.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
                 ->select('packages.name', DB::raw('count(transactions.id) as sales_count'))
@@ -192,6 +196,7 @@ class AdminController extends Controller
 
         // Base query for summary and table
         $query = DB::table('transactions')
+            ->where('transactions.status', 'completed')
             ->join('vouchers', 'transactions.voucher_id', '=', 'vouchers.id')
             ->join('packages', 'vouchers.package_id', '=', 'packages.id')
             ->join('sites', 'packages.site_id', '=', 'sites.id')
@@ -555,7 +560,7 @@ class AdminController extends Controller
         $sites = Site::all();
         $packages = Package::all();
 
-        $query = Transaction::with(['site', 'voucher.package']);
+        $query = Transaction::where('status', 'completed')->with(['site', 'voucher.package']);
 
         // Apply Filters
         if ($request->filled('company_id') && $user->hasRole('Owner')) {
@@ -676,7 +681,7 @@ class AdminController extends Controller
         $activeSiteId = $user->site_id ?? $request->site_id;
         $agents = $activeSiteId ? User::role('Agent')->where('site_id', $activeSiteId)->get() : collect();
 
-        $query = Transaction::query()
+        $query = Transaction::where('status', 'completed')
             ->with(['site', 'package', 'agent'])
             ->when($request->site_id, function ($q) use ($request) {
                 return $q->where('site_id', $request->site_id);

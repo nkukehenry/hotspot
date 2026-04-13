@@ -46,24 +46,23 @@ class AirtelPayment implements PaymentService
 
             if ($response->successful()) {
                 $data = $response->json();
-                 // Airtel returns data.transaction.id
-                 $tx_data = $data['data']['transaction'] ?? $data['transaction'] ?? null;
-                 $tx_id = $tx_data['id'] ?? $reference;
+                $tx_data = $data['data']['transaction'] ?? $data['transaction'] ?? null;
+                $tx_id = $tx_data['id'] ?? $reference;
 
-                 return [
+                return [
                     'success' => true,
                     'data' => (object)[
                         'api_status' => 'success',
                         'tid' => $tx_id,
                         'original_ref' => $reference
                     ]
-                 ];
+                ];
             }
 
-             $errorData = $response->json();
-             $errorMessage = $errorData['message'] ?? $errorData['info'] ?? 'Airtel Payment Failed';
+            $errorData = $response->json();
+            $errorMessage = $errorData['message'] ?? $errorData['info'] ?? 'Airtel Payment Failed';
 
-             return [
+            return [
                 'success' => false,
                 'message' => $errorMessage,
                 'data' => (object)['api_status' => 'failed']
@@ -71,7 +70,7 @@ class AirtelPayment implements PaymentService
 
         } catch (\Exception $e) {
             Log::error("Airtel Payment Exception: " . $e->getMessage());
-             return [
+            return [
                 'success' => false,
                 'message' => 'Exception: ' . $e->getMessage(),
                 'data' => (object)['api_status' => 'error']
@@ -82,22 +81,38 @@ class AirtelPayment implements PaymentService
     public function checkStatus($tranId)
     {
         try {
-            $response = $this->authenticatedRequest('GET', "/standard/v1/payments/{$tranId}");
+            $response = $this->authenticatedRequest('GET', "/standard/v1/payments/" . $tranId);
             
             Log::info("Airtel Status Response: " . $response->body());
             
             if ($response->successful()) {
                 $data = $response->json();
-                $tx_data = $data['data']['transaction'] ?? $data['transaction'] ?? null;
-                $status = $tx_data['status'] ?? 'PENDING';
                 
-                // Map to CustomerController expectations
-                // TS = SUCCESSFUL, TF = FAILED
-                 $mappedStatus = 'pending';
-                if ($status === 'TS' || $status === 'SUCCESSFUL' || $status === 'SUCCESS') $mappedStatus = 'approved';
-                if ($status === 'TF' || $status === 'FAILED') $mappedStatus = 'error';
+                // Benchmark: Node.js snippet checks data.transaction or root transaction, and status_code || status
+                $tx_data = $data['data']['transaction'] ?? $data['transaction'] ?? null;
+                
+                if (!$tx_data) {
+                    return [
+                        'success' => true,
+                        'data' => (object)[
+                            'status' => 'pending',
+                            'raw_status' => 'NO_TX_DATA',
+                            'reason' => 'Transaction data missing'
+                        ]
+                    ];
+                }
 
-                 return [
+                $status = $tx_data['status_code'] ?? $tx_data['status'] ?? 'PENDING';
+                
+                // Map to internal status
+                $mappedStatus = 'pending';
+                if (in_array($status, ['TS', 'SUCCESSFUL', 'SUCCESS', 'approved', 'closed'])) {
+                    $mappedStatus = 'approved';
+                } elseif (in_array($status, ['TF', 'FAILED', 'error'])) {
+                    $mappedStatus = 'error';
+                }
+
+                return [
                     'success' => true,
                     'data' => (object)[
                         'status' => $mappedStatus,
@@ -106,14 +121,15 @@ class AirtelPayment implements PaymentService
                     ]
                 ];
             }
-             return [
+            return [
                 'success' => false,
-                'message' => 'Status check failed',
+                'message' => 'Status check failed: ' . $response->status(),
                 'data' => null
             ];
 
         } catch (\Exception $e) {
-             return [
+            Log::error("Airtel Status Check Exception: " . $e->getMessage());
+            return [
                 'success' => false,
                 'message' => 'Exception: ' . $e->getMessage(),
                 'data' => null
@@ -152,7 +168,7 @@ class AirtelPayment implements PaymentService
 
     public function processCallback($payload)
     {
-         return $payload;
+        return $payload;
     }
 
     private function getAccessToken()
@@ -176,8 +192,6 @@ class AirtelPayment implements PaymentService
 
     private function formatPhone($phone)
     {
-        // Airtel expects number without 256 or 0 prefix?
-        // JS says: .replace(/^\+256/, '').replace(/^256/, '').replace(/^0/, '')
         $phone = preg_replace('/\D/', '', $phone);
         if (Str::startsWith($phone, '256')) {
             $phone = substr($phone, 3);

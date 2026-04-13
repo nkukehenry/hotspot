@@ -31,11 +31,13 @@ class SettlementController extends Controller
         if ($site) {
             // Verify balance dynamically - site scoping handled by global scope
             $availableBalance = Transaction::where('site_id', $site->id)
+                ->where('status', 'completed')
                 ->whereNull('agent_id')
                 ->whereNull('settlement_request_id')
                 ->sum(DB::raw('amount - site_fee'));
 
             $pendingFees = Transaction::where('site_id', $site->id)
+                ->where('status', 'completed')
                 ->whereNull('agent_id')
                 ->whereNull('settlement_request_id')
                 ->sum('site_fee');
@@ -62,6 +64,7 @@ class SettlementController extends Controller
 
         // Calculate Total Available Balance (Unsettled Digital Sales - Merchant Fees)
         $availableBalance = Transaction::where('site_id', $siteId)
+            ->where('status', 'completed')
             ->whereNull('agent_id')
             ->whereNull('settlement_request_id')
             ->sum(DB::raw('amount - site_fee'));
@@ -84,6 +87,7 @@ class SettlementController extends Controller
         DB::transaction(function () use ($request) {
             // Lock rows for reading
             $query = Transaction::where('site_id', $request->site_id)
+                ->where('status', 'completed')
                 ->whereNull('agent_id')
                 ->whereNull('settlement_request_id')
                 ->orderBy('created_at', 'asc') // FIFO
